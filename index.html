@@ -6,89 +6,554 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Delivery Express 🍕</title>
 
-  <!-- Fonte -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Fonte e ícones -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-  <!-- Supabase -->
+  <!-- Supabase (coloque sua URL e ANON KEY abaixo) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
   <style>
     * { box-sizing: border-box; }
-    body, html { margin:0; height:100%; font-family: 'Roboto', sans-serif; color:#fff; }
+    body,html { height:100%; margin:0; font-family: 'Poppins', sans-serif; }
+    /* Tela inicial com imagem de fundo */
+    #splash { background-image: url('https://img.freepik.com/vetores-gratis/fundo-de-padrao-de-pizza-desenhado-a-mao_23-2150905263.jpg?semt=ais_hybrid&w=740&q=80'); background-size:cover; background-position:center; height:100%; display:flex; align-items:center; justify-content:center; }
+    #enter-btn { background:#e63946;color:white;padding:20px 30px;border-radius:12px;border:none;font-size:1.2rem;cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.2);} 
 
-    /* Fundos personalizados */
-    #splash { background:url('https://wallpapers.com/images/featured/plano-de-fundo-de-pizza-5y42f5kd51rbps2o.jpg') center/cover no-repeat; height:100%; display:flex; align-items:center; justify-content:center; }
-    #category-screen { background-size:cover; background-position:center; min-height:100%; padding:16px; }
-    #home-screen { background:url('https://wallpapers.com/images/featured/plano-de-fundo-de-pizza-5y42f5kd51rbps2o.jpg') center/cover no-repeat; min-height:100%; padding:16px; }
-    #comanda-screen, #pagamento-screen { background:url('https://png.pngtree.com/png-vector/20231213/ourmid/pngtree-delivery-food-on-motorcycle-png-image_11320666.png') center/cover no-repeat; background-size:cover; padding:16px; min-height:100%; }
-    #login-modal .card-modal, #register-modal .card-modal { background:rgba(0,0,0,0.7); color:#fff; }
-    input, textarea { border:1px solid #ccc; border-radius:6px; padding:8px; width:100%; margin-top:8px; }
+    /* App container */
+    #app { display:none; height:100%; }
+    header { display:flex; align-items:center; gap:12px; padding:12px 16px; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    #logo { width:48px; height:48px; border-radius:8px; background:#fff; display:flex; align-items:center; justify-content:center; }
+    #brand { font-family: 'Colibri', Arial, sans-serif; font-size:1.1rem; font-weight:700; }
+    #subtitle { font-family: 'Arial Black', Arial, sans-serif; font-size:0.85rem; }
+    main { padding:16px; max-width:900px; margin:12px auto; }
 
-    /* Botões de texto coloridos */
-    .btn { background:transparent; border:none; padding:12px; font-weight:600; font-size:1.1rem; cursor:pointer; text-align:left; }
-    .btn:hover { opacity:0.8; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+    .btn { padding:12px; border-radius:10px; background:#457b9d;color:white;border:none; cursor:pointer; font-weight:600; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; }
+    .category-title { font-size:1.2rem; color:#1d3557; margin:8px 0; }
 
-    /* Layout inicial */
-    .grid { display:flex; flex-direction:column; gap:12px; }
-    header { display:flex; align-items:center; gap:12px; padding:12px; background:rgba(0,0,0,0.5); }
-    #brand { font-family:'Playfair Display', serif; font-size:1.5rem; font-weight:700; }
-    #subtitle { font-weight:500; font-size:1rem; }
+    .card { background:white; border-radius:12px; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .item-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #eee; }
+    .qty { width:72px; display:flex; gap:6px; align-items:center; }
+    .small { font-size:0.9rem; color:#555; }
+    .concluir-btn { display:none; position:fixed; top:16px; right:16px; background:#e63946;color:white;padding:10px 14px;border-radius:10px;border:none; z-index:999; }
 
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    .category-title { font-size:1.5rem; font-weight:700; text-shadow:2px 2px 4px rgba(0,0,0,0.5); }
-    .card { background:rgba(0,0,0,0.6); border-radius:12px; padding:12px; margin-bottom:8px; }
+    /* login/cadastro modals simples */
+    .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
+    .card-modal { background:white; padding:18px; border-radius:10px; width:320px; }
+    input,select,textarea { width:100%; padding:8px; margin-top:8px; border-radius:6px; border:1px solid #ccc; }
 
-    @media(max-width:600px){ .grid{ flex-direction:column; } }
+    /* comanda */
+    #comanda-list { background:white; padding:12px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .obs { margin-top:8px; }
+
+    @media(max-width:600px){ header{padding:8px;} main{padding:10px;} 
+    /* Mobile adjustments */
+    .grid{ grid-template-columns: 1fr !important; }
+    .btn{ width:100% !important; padding:14px !important; }
+    .item-row{ flex-direction:column; align-items:flex-start; gap:8px; }
+    .qty{ width:auto; }
+    .card-modal{ width:90% !important; }
+    #concluir-top{ right:10px; top:10px; }
+  }
   </style>
 </head>
 <body>
 
+  <!-- TELA INICIAL (splash) -->
   <div id="splash">
-    <button id="enter-btn" class="btn" style="color:#ffb347;font-size:1.5rem;">Entrar no Delivery Express</button>
+    <button id="enter-btn">Entrar no Delivery Express</button>
   </div>
 
-  <div id="app" style="display:none;">
+  <!-- APP PRINCIPAL -->
+  <div id="app">
     <header>
-      <div id="logo"><i class="fa-solid fa-pizza-slice" style="font-size:24px;color:#ff4500"></i></div>
+      <div id="logo"><i class="fa-solid fa-pizza-slice" style="font-size:20px;color:#e63946"></i></div>
       <div>
         <div id="brand">Sabor Express</div>
         <div id="subtitle">Restaurante e Pizzaria</div>
       </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-        <button class="btn" onclick="goHome()" style="color:#ffb347;">Tela Inicial</button>
-        <div id="greeting">Olá, visitante</div>
+      <div style="margin-left:auto;text-align:right;display:flex;gap:8px;align-items:center">
+        <button class="btn" style="background:#f4a261;padding:8px 10px;font-size:0.9rem" onclick="goHome()">Tela Inicial</button>
+        <div style="text-align:right">
+          <div id="greeting">Olá, visitante</div>
+          <button id="btn-logout" style="display:none;background:transparent;border:none;color:#e63946;cursor:pointer">Sair</button>
+        </div>
       </div>
     </header>
 
     <main>
-      <div id="home-screen">
-        <h2 id="welcome-title" style="text-shadow:2px 2px 4px #000;">Olá, qual seu pedido hoje?</h2>
-        <div class="grid">
-          <button class="btn" onclick="openCategory('pizzas')" style="color:#ff6347;">PIZZAS</button>
-          <button class="btn" onclick="openCategory('salgados')" style="color:#ffa500;">SALGADOS</button>
-          <button class="btn" onclick="openCategory('bebidas')" style="color:#1e90ff;">BEBIDAS</button>
-          <button class="btn" onclick="openCategory('variados')" style="color:#32cd32;">VARIADOS</button>
-          <button class="btn" onclick="openComanda()" style="color:#ff1493;">COMANDA</button>
-          <button class="btn" onclick="confirmarComandaManual()" style="color:#ff4500;">CONFIRMAR</button>
+      <!-- LOGIN MODAL -->
+      <div id="login-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Login</h3>
+          <input id="login-name" placeholder="Nome" />
+          <input id="login-pass" type="password" placeholder="Senha" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" onclick="doLogin()">Entrar</button>
+            <button class="btn" style="background:#6c757d" onclick="openRegister()">Cadastrar</button>
+          </div>
+          <div style="margin-top:8px;text-align:right"><a href="#" onclick="forgotPassword()">Esqueci a senha</a></div>
         </div>
       </div>
-    </main>
 
+      <!-- REGISTER MODAL -->
+      <div id="register-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Cadastro</h3>
+          <input id="reg-name" placeholder="Nome" />
+          <input id="reg-whatsapp" placeholder="WhatsApp (ex: 5588999...)" />
+          <input id="reg-pass" type="password" placeholder="Senha" />
+          <input id="reg-address" placeholder="Endereço" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" onclick="doRegister()">Finalizar</button>
+            <button class="btn" style="background:#6c757d" onclick="closeModals()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORGOT CODE MODAL -->
+      <div id="forgot-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Recuperar Senha</h3>
+          <input id="forgot-whatsapp" placeholder="WhatsApp cadastrado" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" onclick="sendResetCode()">Enviar código via WhatsApp</button>
+            <button class="btn" style="background:#6c757d" onclick="closeModals()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIRM CODE -->
+      <div id="confirm-code-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Confirme o código</h3>
+          <input id="confirm-code" placeholder="Código" />
+          <button class="btn" onclick="verifyResetCode()">Confirmar</button>
+        </div>
+      </div>
+
+      <!-- NEW PASSWORD -->
+      <div id="new-pass-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Nova senha</h3>
+          <input id="new-pass" type="password" placeholder="Nova senha" />
+          <button class="btn" onclick="setNewPassword()">Salvar senha</button>
+        </div>
+      </div>
+
+
+      <!-- TELA PRINCIPAL APÓS LOGIN -->
+      <div id="home-screen" style="display:none">
+        <h2 id="welcome-title">Olá, qual seu pedido hoje?</h2>
+        <div class="grid" style="margin-top:12px;grid-template-columns:1fr;">
+          <button class="btn" style="background:#e63946" onclick="openCategory('pizzas')">🍕 PIZZAS</button>
+          <button class="btn" style="background:#f4a261" onclick="openCategory('salgados')">🍔 SALGADOS</button>
+          <button class="btn" style="background:#457b9d" onclick="openCategory('bebidas')">🥤 BEBIDAS</button>
+          <button class="btn" style="background:#2a9d8f" onclick="openCategory('variados')">🍲 VARIADOS</button>
+          <button class="btn" style="background:#6a4fb0" onclick="openComanda()">🧾 COMANDA</button>
+          <button class="btn" style="background:#b91d2c" onclick="confirmarComandaManual()">✅ CONFIRMAR</button>
+        </div>
+      </div>
+
+      <!-- CATEGORIA -->
+      <div id="category-screen" style="display:none">
+        <div class="topbar">
+          <h3 class="category-title" id="category-title">Pizzas</h3>
+          <button id="concluir-top" class="concluir-btn" onclick="concluirSelecionados()">Concluir</button>
+        </div>
+        <div id="category-list"></div>
+      </div>
+
+      <!-- COMANDA -->
+      <div id="comanda-screen" style="display:none">
+        <h3>Comanda</h3>
+        <div id="comanda-list"></div>
+        <div style="margin-top:8px">Observações:</div>
+        <textarea id="obs-text" class="obs" placeholder="Ex: Sem cebola"></textarea>
+        <div style="margin-top:8px">
+          <button class="btn" onclick="iniciarPagamento()">PAGAR</button>
+        </div>
+      </div>
+
+      <!-- PAGAMENTO -->
+      <div id="pagamento-screen" style="display:none">
+        <h3>Pagamento</h3>
+        <div>
+          <label><input type="radio" name="entrega" value="entrega"> Entrega (+R$2,00)</label>
+          <label><input type="radio" name="entrega" value="retirar" checked> Retirar</label>
+        </div>
+        <div id="endereco-custom" style="display:none;margin-top:8px">
+          <input id="endereco-custom-input" placeholder="Insira o endereço" />
+        </div>
+
+        <div style="margin-top:12px">
+          <button class="btn" onclick="selecionarPagamento('pix')">PIX</button>
+          <button class="btn" onclick="selecionarPagamento('dinheiro')">DINHEIRO</button>
+          <button class="btn" onclick="selecionarPagamento('cartao')">CARTAO</button>
+        </div>
+
+        <div id="pix-box" style="display:none;margin-top:12px;background:#f1faee;padding:10px;border-radius:8px">
+          <div>Conclua o pagamento</div>
+          <div id="pix-key">Chave PIX: 88996488990</div>
+          <div>VALOR: R$ <span id="pix-valor">0.00</span></div>
+          <div style="margin-top:8px"><button class="btn" onclick="copiarPix()">Copiar Chave</button></div>
+        </div>
+
+        <div id="dinheiro-box" style="display:none;margin-top:12px">
+          <div>Precisa de troco?</div>
+          <input id="troco-valor" placeholder="Ex: Troco para R$ 50" />
+        </div>
+
+        <div style="margin-top:12px">
+          <button id="finalizar-btn" class="btn" style="display:none;background:#e63946" disabled onclick="finalizarPedido()">FINALIZAR</button>
+        </div>
+      </div>
+
+    </main>
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://bugvqljxmtnunosimaaj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1Z3ZxbGp4bXRudW5vc2ltYWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MDc3NDEsImV4cCI6MjA3NzE4Mzc0MX0.9ziEmLU7QsTtVXyZKiYMxQuudAIHgrZI9njbZB84dqM';
-    let supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    /***** CONFIGURAÇÃO SUPABASE e WHATSAPP *****/
+    const SUPABASE_URL = 'https://bugvqljxmtnunosimaaj.supabase.co' // coloque aqui sua supabase url (ex: https://xyz.supabase.co)
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1Z3ZxbGp4bXRudW5vc2ltYWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MDc3NDEsImV4cCI6MjA3NzE4Mzc0MX0.9ziEmLU7QsTtVXyZKiYMxQuudAIHgrZI9njbZB84dqM' // coloque aqui sua anon public key
+    const numeroWhatsAppLoja = '5588996488990' // número da loja
+    const PIX_KEY = '88996488990'
 
-    document.getElementById('enter-btn').addEventListener('click',()=>{
-      document.getElementById('splash').style.display='none';
-      document.getElementById('app').style.display='block';
-      openHome();
-    });
+    // inicializa supabase se configurado (compatível com o bundle CDN do Supabase v2)
+    let supabase = null
+    // o script CDN expõe o namespace em window.supabase ou window.supabaseJs; aqui detectamos automaticamente
+    const _supabaseLib = window.supabase || window.supabaseJs || window.supabaseClient || null
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && _supabaseLib && typeof _supabaseLib.createClient === 'function') {
+      supabase = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    } else {
+      // se o client não puder ser inicializado, supabase permanece null e o app usa localStorage como fallback
+      supabase = null
+    }
 
-    function goHome(){ document.getElementById('home-screen').style.display='block'; }
-    function openHome(){ document.getElementById('home-screen').style.display='block'; document.getElementById('greeting').textContent='Olá, usuário'; }
+    /***** ESTADO LOCAL (cliente) *****/
+    let currentUser = null // {name, whatsapp, address}
+    let tempResetCode = null
+
+    // carrinho temporário antes de salvar como pedido
+    let tempSelection = [] // itens selecionados na categoria atual antes de concluir
+    let comanda = [] // itens no carrinho principal
+
+    // menu fixo conforme pedido
+    const MENU = 
+      { background-image: url('https://img.freepik.com/fotos-gratis/pizza-de-calabresa_1203-12536.jpg?w=740&t=st=1708859604~exp=1708860204~hmac=fc5a1e7430d2b2b42a2ec6b337d6b726f1ed43c9f1fda2aa52d6d6b09f58bce4'); }
+      pizzas: [
+        {id:'p1', name:'CALABRESA', desc:'calabresa, queijo, mussarela, milho, ervilha', price:38.00},
+        {id:'p2', name:'04 QUEIJOS', desc:'queijo qualho, katupiry, mussarela, milho, ervilha', price:30.00}
+      ],
+      { background-image: url('https://img.freepik.com/fotos-gratis/salgado-calabresa_144627-16347.jpg?w=740&t=st=1708859703~exp=1708860303~hmac=ce8d44f3b5110f02c7a1b60a06585d45dcbffb269b31cabc9b6da59a6e712305'); }
+        salgados: [
+        {id:'s1', name:'CALABRESA', desc:'calabresa, milho, ervilha', price:38.00},
+        {id:'s2', name:'04 QUEIJOS', desc:'queijo qualho, katupiry, mussarela, milho, ervilha', price:30.00}
+      ],
+      { background-image: url('https://img.freepik.com/fotos-gratis/garrafa-de-coca-cola_144627-16739.jpg?w=740&t=st=1708859765~exp=1708860365~hmac=f7f5a97c7740f82f1e2cd12e3c5da6b1b987a2f88890e9c9c8c6f6b3d8315e4b'); }
+      bebidas: [
+        {id:'b1', name:'COCA 2L', desc:'Coca Cola 2L', price:10.00},
+        {id:'b2', name:'DELRIO 2L', desc:'Delrio 2L', price:10.00}
+      ],
+       { background-image: url('https://img.freepik.com/fotos-gratis/sopa-soja_144627-16749.jpg?w=740&t=st=1708859810~exp=1708860410~hmac=0b3c17b6b67b2b8e93e0f7a019fb8f53b0e567c58308e1c02243d0fc8a1a93f3'); }
+      variados: [
+        {id:'v1', name:'SOPA DE SOJA', desc:'soja, soja', price:10.00},
+        {id:'v2', name:'CANJA', desc:'canja, canja', price:10.00}
+      ]
+    }
+
+    /***** UTILIDADES *****/
+    function $(id){return document.getElementById(id)}
+    function show(el){ el.style.display = 'block' }
+    function hide(el){ el.style.display = 'none' }
+    function goHome(){
+      // fecha modais e mostra a tela inicial limpa
+      closeModals()
+      $('category-screen').style.display='none'
+      $('comanda-screen').style.display='none'
+      $('pagamento-screen').style.display='none'
+      $('home-screen').style.display='block'
+    }
+
+    // Contador de pedidos diários (localStorage) -- se supabase disponível, salva lá também
+    function nextOrderNumber(){
+      const hoje = new Date().toISOString().slice(0,10)
+      const key = 'ordernum_'+hoje
+      let n = Number(localStorage.getItem(key) || 0) + 1
+      localStorage.setItem(key, n)
+      return String(n).padStart(2,'0')
+    }
+
+    /***** INICIALIZAÇÃO UI */
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // splash enter
+      $('enter-btn').addEventListener('click', ()=>{
+        $('splash').style.display='none'
+        $('app').style.display='block'
+        openLoginIfNeeded()
+      })
+
+      // login flow buttons
+      $('btn-logout').addEventListener('click', ()=>{ logout() })
+
+      // radio entrega
+      document.querySelectorAll('input[name="entrega"]').forEach(r=> r.addEventListener('change', ()=>{
+        const v = document.querySelector('input[name="entrega"]:checked').value
+        $('endereco-custom').style.display = v==='entrega' ? 'block':'none'
+      }))
+    })
+
+    /***** AUTH SIMPLES (usa supabase se configurado, senão localStorage) */
+    function openLoginIfNeeded(){
+      // se já logado (localStorage), vai direto
+      const stored = localStorage.getItem('de_user')
+      if(stored){ currentUser = JSON.parse(stored); openHome(); return }
+      // senão abre modal de login
+      show($('login-modal'))
+    }
+    function closeModals(){ hide($('login-modal')); hide($('register-modal')); hide($('forgot-modal')); hide($('confirm-code-modal')); hide($('new-pass-modal')) }
+    function openRegister(){ hide($('login-modal')); show($('register-modal')) }
+
+    async function doRegister(){
+      const name = $('reg-name').value.trim(); const whatsapp = $('reg-whatsapp').value.trim(); const pass = $('reg-pass').value; const address = $('reg-address').value.trim()
+      if(!name || !whatsapp || !pass){ alert('Preencha nome, whatsapp e senha'); return }
+      if(supabase){
+        const { data, error } = await supabase.from('customers').insert([{ name, whatsapp, password:pass, address }])
+        if(error){ console.error(error); alert('Erro ao cadastrar: '+error.message); return }
+      } else {
+        const users = JSON.parse(localStorage.getItem('de_users')||'[]')
+        if(users.find(u=>u.whatsapp===whatsapp)){ alert('WhatsApp já cadastrado'); return }
+        users.push({ name, whatsapp, password:pass, address })
+        localStorage.setItem('de_users', JSON.stringify(users))
+      }
+      // não enviar WhatsApp; finalizar cadastro e abrir tela inicial
+      closeModals()
+      currentUser = { name, whatsapp, address }
+      localStorage.setItem('de_user', JSON.stringify(currentUser))
+      alert('Cadastro Realizado com sucesso')
+      openHome()
+    }
+
+    async function doLogin(){
+      const name = $('login-name').value.trim(); const pass = $('login-pass').value;
+      if(!name||!pass){ alert('Preencha nome e senha'); return }
+      if(supabase){
+        try{
+          // procura usuário por nome
+          const { data, error } = await supabase.from('customers').select().eq('name', name).limit(1).maybeSingle()
+          if(error){ console.error(error); alert('Erro no login'); return }
+          const user = data
+          if(!user){ alert('Cliente não Cadastrado'); return }
+          if(user.password !== pass){ alert('Nome ou senha inválidos'); return }
+          currentUser = { name:user.name, whatsapp:user.whatsapp, address:user.address }
+          localStorage.setItem('de_user', JSON.stringify(currentUser))
+          closeModals(); openHome()
+        }catch(e){ console.error(e); alert('Erro no login') }
+      } else {
+        const users = JSON.parse(localStorage.getItem('de_users')||'[]')
+        const user = users.find(u=>u.name===name && u.password===pass)
+        if(!user){ alert('Cliente não Cadastrado'); return }
+        currentUser = { name:user.name, whatsapp:user.whatsapp, address:user.address }
+        localStorage.setItem('de_user', JSON.stringify(currentUser))
+        closeModals(); openHome()
+      }
+    }
+
+    function logout(){ localStorage.removeItem('de_user'); currentUser=null; location.reload() }
+
+    /***** ESQUECI A SENHA via WhatsApp (gera e envia código) */
+    function forgotPassword(){ hide($('login-modal')); show($('forgot-modal')) }
+    function sendResetCode(){ const w = $('forgot-whatsapp').value.trim(); if(!w){ alert('Digite o WhatsApp'); return }
+      tempResetCode = Math.floor(1000+Math.random()*9000).toString()
+      const text = encodeURIComponent(`Seu código de recuperação: ${tempResetCode}`)
+      window.open(`https://wa.me/${w}?text=${text}`)
+      closeModals(); show($('confirm-code-modal'))
+    }
+    function verifyResetCode(){ const c = $('confirm-code').value.trim(); if(c===tempResetCode){ closeModals(); show($('new-pass-modal')) } else alert('Código inválido') }
+    function setNewPassword(){ const np = $('new-pass').value; if(!np){ alert('Digite nova senha'); return }
+      // atualiza no supabase ou localStorage (assume whatsapp usado no reset flow)
+      // aqui simplificado: procura usuário pelo whatsapp informado no passo anterior
+      const w = $('forgot-whatsapp').value.trim()
+      if(supabase){ supabase.from('customers').update({ password: np }).eq('whatsapp', w).then(()=>{ alert('Senha alterada'); closeModals(); show($('login-modal')) }) }
+      else{ const users = JSON.parse(localStorage.getItem('de_users')||'[]'); const u = users.find(x=>x.whatsapp===w); if(u){ u.password=np; localStorage.setItem('de_users', JSON.stringify(users)); alert('Senha alterada'); closeModals(); show($('login-modal')) } else{ alert('Usuário não encontrado') } }
+    }
+
+    /***** HOME / CATEGORIAS / SELEÇÃO DE ITENS */
+    function openHome(){ hide($('login-modal')); hide($('register-modal')); hide($('forgot-modal'))
+      $('home-screen').style.display='block'
+      $('greeting').textContent = currentUser ? `${currentUser.name.split(' ')[0]}` : 'Visitante'
+      $('welcome-title').textContent = `Olá ${currentUser?currentUser.name.split(' ')[0]:'amigo'}, qual seu pedido hoje?`
+      $('btn-logout').style.display = 'inline-block'
+    }
+
+    (id, delta){ const el = $('q_'+id); const val = Number(el.textContent||0)+delta; el.textContent = Math.max(0,val); if(val<=0) removeTempItemQty(id) }
+    function addTempItem(cat,id){ const menu = MENU[cat]; const it = menu.find(x=>x.id===id); const qty = Number($('q_'+id).textContent||0); if(qty<=0){ alert('Escolha quantidade'); return }
+      tempSelection.push({ ...it, qty })
+      $('concluir-top').style.display='inline-block'
+      // não mostrar alerta de confirmação para o usuário
+    }
+      // adiciona qty vezes no tempSelection (poderíamos simplificar e adicionar obj com qty)
+      tempSelection.push({ ...it, qty })
+      $('concluir-top').style.display='inline-block'
+      alert(`${qty} x ${it.name} adicionado(s)`) ;
+    }
+    function removeTempItemQty(id){ tempSelection = tempSelection.filter(x=>x.id!==id) }
+    function concluirSelecionados(){ // adiciona tempSelection na comanda
+      tempSelection.forEach(it=>{ comanda.push(it) })
+      tempSelection = []
+      $('concluir-top').style.display='none'
+      $('category-screen').style.display='none'
+      $('home-screen').style.display='block'
+      renderComanda()
+    }
+
+    /***** COMANDA */
+    function openComanda(){ $('home-screen').style.display='none'; $('comanda-screen').style.display='block'; renderComanda() }
+    function renderComanda(){ const el = $('comanda-list'); el.innerHTML=''; let total=0; comanda.forEach((it,idx)=>{
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='8px 0'
+      const name = document.createElement('div'); name.innerHTML = `${it.qty} x <strong>${it.name}</strong><div class="small">R$ ${(it.price*it.qty).toFixed(2)}</div>`
+      const actions = document.createElement('div'); actions.innerHTML = `<button onclick="removerDaComanda(${idx})" style="background:transparent;border:none;color:#b91d2c">Remover</button>`
+      row.appendChild(name); row.appendChild(actions); el.appendChild(row); total += it.price*it.qty
+    })
+      const totalDiv = document.createElement('div'); totalDiv.style.textAlign='right'; totalDiv.style.fontWeight='700'; totalDiv.style.marginTop='8px'; totalDiv.textContent = `Total: R$ ${total.toFixed(2)}`
+      el.appendChild(totalDiv)
+    }
+    function removerDaComanda(i){ comanda.splice(i,1); renderComanda() }
+
+    /***** PAGAMENTO FLOW */
+    function iniciarPagamento(){ $('comanda-screen').style.display='none'; $('pagamento-screen').style.display='block'; const total = comanda.reduce((s,it)=>s+it.price*it.qty,0); $('pix-valor').textContent = total.toFixed(2) }
+    function selecionarPagamento(metodo){ hide($('pix-box')); hide($('dinheiro-box')); hide($('finalizar-btn'));
+      window._metodoEscolhido = metodo
+      if(metodo==='pix'){
+        show($('pix-box'))
+        $('pix-key').textContent = 'Chave PIX:'+PIX_KEY
+        // Para PIX: copiar chave já finalizará o pedido (copiar aciona finalizar)
+        $('finalizar-btn').disabled = true
+      } else if(metodo==='dinheiro'){
+        show($('dinheiro-box'))
+        // exibe o botão FINALIZAR apenas para dinheiro e cartão
+        $('finalizar-btn').style.display = 'inline-block'
+        $('finalizar-btn').disabled = false
+      } else if(metodo==='cartao'){
+        $('finalizar-btn').style.display = 'inline-block'
+        $('finalizar-btn').disabled = false
+      }
+    }
+      if(metodo==='dinheiro'){ show($('dinheiro-box')) }
+      // cartão nada especial
+      // guarda método escolhido
+      window._metodoEscolhido = metodo
+    }
+
+    function copiarPix(){ navigator.clipboard.writeText(PIX_KEY);
+      // define método e finaliza imediatamente enviando a mensagem
+      window._metodoEscolhido = 'pix'
+      // chama finalizarPedido que grava e envia o WhatsApp
+      finalizarPedido()
+    }
+
+    function confirmarComandaManual(){ // atalho para confirmar sem abrir comanda
+      openComanda(); iniciarPagamento(); }
+
+    async function finalizarPedido(){
+      // calcula total e adiciona taxa de entrega se aplicável
+      let total = comanda.reduce((s,it)=>s+it.price*it.qty,0)
+      const entrega = document.querySelector('input[name="entrega"]:checked').value
+      let endereco = currentUser ? currentUser.address : ''
+      if(entrega==='entrega'){
+        total += 2.00
+        const addrCustom = $('endereco-custom-input').value.trim()
+        if(addrCustom) endereco = addrCustom
+      }
+      const obs = $('obs-text').value
+      const pagamento = window._metodoEscolhido || 'PIX'
+      let troco = ''
+      if(pagamento==='dinheiro') troco = $('troco-valor').value || ''
+
+      const numero = nextOrderNumber()
+      // Monta mensagem
+      let msg = `Pedido Nº ${numero} - ${entrega.toUpperCase()}%0A`
+      comanda.forEach(it=>{ msg += `${it.qty} ${it.name}%0A` })
+      if(obs) msg += `obs: ${obs}%0A`
+      msg += `TOTAL R$ ${total.toFixed(2)}%0A`
+      if(pagamento==='pix') msg += `Pagamento: PIX - SEGUE O COMPROVANTE%0AChave PIX:${PIX_KEY}%0AVALOR R$ ${total.toFixed(2)}%0A`;
+      if(pagamento==='dinheiro') msg += `Pagamento: DINHEIRO - Troco p/ ${troco || '-'}%0A`;
+      if(pagamento==='cartao') msg += `Pagamento: CARTAO%0A`;
+
+      // Salva no supabase (opcional)
+      const orderObj = { order_number: numero, customer_name: currentUser?currentUser.name:'', whatsapp: currentUser?currentUser.whatsapp:'', items: JSON.stringify(comanda), total: total, payment: pagamento, delivery: entrega, address: endereco, obs }
+      if(supabase){
+        await supabase.from('orders').insert([orderObj])
+      } else {
+        // salva local
+        const orders = JSON.parse(localStorage.getItem('de_orders')||'[]')
+        orders.push(orderObj); localStorage.setItem('de_orders', JSON.stringify(orders))
+      }
+
+      // envia WhatsApp para a loja
+      const url = `https://wa.me/${numeroWhatsAppLoja}?text=${msg}`
+      window.open(url, '_blank')
+
+      // limpa comanda (pedido some da comanda após finalizar)
+      comanda = []
+      $('comanda-list').innerHTML = ''
+      $('obs-text').value = ''
+      $('pagamento-screen').style.display='none'
+      $('home-screen').style.display='block'
+      alert('Pedido enviado. Obrigado!')
+    }
+
+    /***** UTILIDADES ADICIONAIS */
+    function removerDoArrayById(arr,id){ const i = arr.findIndex(x=>x.id===id); if(i>=0) arr.splice(i,1) }
+
   </script>
+
+  <!--
+  SQL PARA CRIAR AS TABELAS NO SUPABASE
+  COLE ESTE BLOCO NO SQL EDITOR DO SEU PROJETO SUPABASE (SQL > QUERY)
+
+  -- Habilita extensão para UUID
+  CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+  -- Tabela de clientes
+  CREATE TABLE IF NOT EXISTS public.customers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    whatsapp text UNIQUE NOT NULL,
+    password text NOT NULL,
+    address text,
+    created_at timestamptz DEFAULT now()
+  );
+
+  -- Tabela de pedidos
+  CREATE TABLE IF NOT EXISTS public.orders (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number text NOT NULL,
+    customer_id uuid REFERENCES public.customers(id),
+    customer_name text,
+    whatsapp text,
+    items jsonb NOT NULL,
+    total numeric(10,2) NOT NULL,
+    payment text,
+    delivery text,
+    address text,
+    obs text,
+    created_at timestamptz DEFAULT now()
+  );
+
+  -- Índices úteis
+  CREATE INDEX IF NOT EXISTS idx_orders_order_number ON public.orders(order_number);
+  CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders(created_at);
+
+  -- Observação sobre RLS (Row Level Security):
+  -- Neste exemplo deixamos RLS desabilitado por simplicidade. Em produção recomendamos
+  -- habilitar RLS e criar políticas adequadas (por exemplo: permitir INSERT para o papel 'anon'
+  -- apenas se você entender as implicações de segurança, ou usar uma Edge Function/back-end
+  -- para criar pedidos com a service_role).
+
+  -->
+
 </body>
 </html>
