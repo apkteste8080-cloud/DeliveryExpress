@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delivery Express 🍕</title>
+
+  <!-- Fonte e ícones -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" 
+        integrity="sha512-XxQf5f+YjzQx5E6T0PqZT5xLzU+ib+Rp4HIlV0OljBSb2YcCUq/Nm7V4lznn8PlXwKZfa7Pp+oeYb5V0wV0aVQ==" 
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f8f8;
+      color: #333;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      background-color: #e63946;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      z-index: 10;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .categoria h2 {
+      margin-top: 2rem;
+      color: #1d3557;
+      border-left: 5px solid #e63946;
+      padding-left: 10px;
+      font-size: 1.3rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+
+    .card:hover { transform: scale(1.02); }
+
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+
+    .card-content {
+      padding: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .card-content h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .card-content p {
+      font-size: 0.9rem;
+      color: #555;
+      flex-grow: 1;
+    }
+
+    .card-content .price {
+      font-weight: bold;
+      color: #e63946;
+    }
+
+    .card-content button {
+      margin-top: 0.5rem;
+      background-color: #457b9d;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.3s;
+    }
+
+    .card-content button:hover { background-color: #1d3557; }
+
+    .carrinho, .opcoes {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-top: 2rem;
+    }
+
+    .carrinho h2, .opcoes h2 {
+      color: #1d3557;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #lista-carrinho li {
+      border-bottom: 1px solid #eee;
+      padding: 0.3rem 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .total {
+      text-align: right;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+
+    select, input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    #pix-info, #dinheiro-info {
+      display: none;
+      margin-top: 10px;
+      background: #f1faee;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    #pix-info img {
+      width: 120px;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .confirmar {
+      width: 100%;
+      background: #e63946;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.3s;
+    }
+
+    .confirmar:hover { background: #b91d2c; }
+
+    @media (max-width: 600px) {
+      header { font-size: 1.2rem; }
+      .card-content h3 { font-size: 0.95rem; }
+      .card-content p { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <header><i class="fa-solid fa-pizza-slice"></i> Delivery Express</header>
+
+  <main>
+    <!-- PIZZAS -->
+    <section class="categoria" id="pizzas">
+      <h2><i class="fa-solid fa-pizza-slice"></i> Pizzas</h2>
+      <div class="grid">
+        <div class="card">
+          <img src="https://images.unsplash.com/photo-1601924582971-d1010e4a5e3d" alt="Pizza Calabresa">
+          <div class="card-content">
+            <h3>Pizza Calabresa</h3>
+            <p>Queijo, calabresa, cebola e orégano.</p>
+            <span class="price">R$ 35,00</span>
+            <button onclick="addItem('Pizza Calabresa', 35)"><i class="fa-solid fa-cart-plus"></i> Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SALGADOS -->
+    <section class="categoria" id="salgados">
+      <h2><i class="fa-solid fa-burger"></i> Salgados</h2>
+      <div class="grid">
+        <div class="card">
+          <img src="https://images.unsplash.com/photo-1601050690597-3b4c1780d46a" alt="Coxinha">
+          <div class="card-content">
+            <h3>Coxinha</h3>
+            <p>Tradicional de frango com catupiry.</p>
+            <span class="price">R$ 6,00</span>
+            <button onclick="addItem('Coxinha', 6)"><i class="fa-solid fa-cart-plus"></i> Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BEBIDAS -->
+    <section class="categoria" id="bebidas">
+      <h2><i class="fa-solid fa-bottle-water"></i> Bebidas</h2>
+      <div class="grid">
+        <div class="card">
+          <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b" alt="Refrigerante Lata">
+          <div class="card-content">
+            <h3>Refrigerante Lata</h3>
+            <p>350ml, diversos sabores.</p>
+            <span class="price">R$ 6,00</span>
+            <button onclick="addItem('Refrigerante Lata', 6)"><i class="fa-solid fa-cart-plus"></i> Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARRINHO -->
+    <section class="carrinho">
+      <h2><i class="fa-solid fa-cart-shopping"></i> Seu Pedido</h2>
+      <ul id="lista-carrinho"></ul>
+      <div class="total">Total: R$ <span id="total">0,00</span></div>
+    </section>
+
+    <!-- ENTREGA -->
+    <section class="opcoes">
+      <h2><i class="fa-solid fa-truck"></i> Tipo de Pedido</h2>
+      <label for="tipo-pedido">Selecione:</label>
+      <select id="tipo-pedido" onchange="toggleEndereco()">
+        <option value="retirada">Retirada</option>
+        <option value="entrega">Entrega</option>
+      </select>
+      <div id="endereco-field" style="display:none;">
+        <label for="endereco">Endereço para entrega:</label>
+        <input type="text" id="endereco" placeholder="Rua, número, bairro" />
+      </div>
+    </section>
+
+    <!-- PAGAMENTO -->
+    <section class="opcoes">
+      <h2><i class="fa-solid fa-credit-card"></i> Forma de Pagamento</h2>
+      <label for="pagamento">Selecione:</label>
+      <select id="pagamento" onchange="togglePagamento()">
+        <option value="pix">PIX</option>
+        <option value="dinheiro">Dinheiro</option>
+        <option value="cartao">Cartão</option>
+      </select>
+
+      <div id="pix-info">
+        <p><strong>Chave PIX:</strong> seuemail@exemplo.com</p>
+        <p>Envie o comprovante do pagamento via WhatsApp para confirmar o pedido.</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data=suaChavePixAqui&type=png" alt="QR Code PIX">
+      </div>
+
+      <div id="dinheiro-info">
+        <label for="troco">Precisa de troco?</label>
+        <input type="text" id="troco" placeholder="Ex: Troco para R$ 50" />
+      </div>
+    </section>
+
+    <!-- CONFIRMAR -->
+    <button class="confirmar" onclick="confirmarPedido()">
+      <i class="fa-brands fa-whatsapp"></i> Enviar Pedido no WhatsApp
+    </button>
+  </main>
+
+  <script>
+    let carrinho = [];
+
+    function addItem(nome, preco) {
+      carrinho.push({ nome, preco });
+      atualizarCarrinho();
+    }
+
+    function atualizarCarrinho() {
+      const lista = document.getElementById('lista-carrinho');
+      lista.innerHTML = '';
+      let total = 0;
+      carrinho.forEach(item => {
+        total += item.preco;
+        const li = document.createElement('li');
+        li.textContent = `${item.nome} - R$ ${item.preco.toFixed(2)}`;
+        lista.appendChild(li);
+      });
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
+
+    function toggleEndereco() {
+      const tipo = document.getElementById('tipo-pedido').value;
+      document.getElementById('endereco-field').style.display = tipo === 'entrega' ? 'block' : 'none';
+    }
+
+    function togglePagamento() {
+      const metodo = document.getElementById('pagamento').value;
+      document.getElementById('pix-info').style.display = metodo === 'pix' ? 'block' : 'none';
+      document.getElementById('dinheiro-info').style.display = metodo === 'dinheiro' ? 'block' : 'none';
+    }
+
+    function confirmarPedido() {
+      if (carrinho.length === 0) {
+        alert('Adicione pelo menos um item ao pedido.');
+        return;
+      }
+
+      const tipo = document.getElementById('tipo-pedido').value;
+      const pagamento = document.getElementById('pagamento').value;
+      const endereco = tipo === 'entrega' ? document.getElementById('endereco').value : 'Retirada no local';
+      const troco = pagamento === 'dinheiro' ? document.getElementById('troco').value : '';
+
+      let resumo = `*Novo Pedido*%0A`;
+      carrinho.forEach(item => {
+        resumo += `- ${item.nome}: R$ ${item.preco.toFixed(2)}%0A`;
+      });
+      resumo += `%0ATotal: R$ ${document.getElementById('total').textContent}`;
+      resumo += `%0ATipo: ${tipo.toUpperCase()}%0AEndereço: ${endereco}`;
+      resumo += `%0APagamento: ${pagamento.toUpperCase()}`;
+      if (troco) resumo += `%0ATroco: ${troco}`;
+
+      resumo += `%0A%0A⚠️ *Importante:* Envie o comprovante de pagamento via WhatsApp para confirmar o pedido.`;
+
+      const numeroWhatsApp = '5588996488990'; // Coloque seu número com DDI + DDD
+      const url = `https://wa.me/${numeroWhatsApp}?text=${resumo}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
