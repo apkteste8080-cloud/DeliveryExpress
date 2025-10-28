@@ -1,189 +1,547 @@
-<!-- substitua as seções estáticas de Pizzas/Salgados/Bebidas pela div onde o menu será renderizado -->
-<section class="categoria" id="menu">
-  <h2><i class="fa-solid fa-utensils"></i> Cardápio</h2>
-  <div id="menu-grid" class="grid"></div>
-</section>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delivery Express 🍕</title>
 
-<!-- mantenha o carrinho/opções/pagamento como estão, só vamos trocar o script -->
-<script>
-/* ===== CONFIGURAÇÃO ===== */
-const numeroWhatsApp = '5588996488990'; // seu número com DDI+DDD
-let chavePix = 'seuemail@exemplo.com'; // chave PIX — altere aqui
-// Gera URL do QR (api.qrserver.com). Pode trocar pelo gerador que preferir.
-function gerarQrUrl(chave) {
-  const payload = `PIX:${chave}`; // texto simples; se quiser o payload do PIX COP (código EMV) gere payload específico
-  return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(payload)}&size=200x200`;
-}
+  <!-- Fonte e ícones -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-/* ===== CARDÁPIO =====
-  Adicione/edite itens aqui. image: URL da imagem (pode ser local ou CDN)
-  categoria deve ser: 'Pizzas', 'Salgados', 'Bebidas', etc.
-*/
-const produtos = [
-  { id: 1, categoria: 'Pizzas', nome: 'Pizza Calabresa', desc: 'Queijo, calabresa, cebola e orégano.', preco: 35.00, image: 'https://images.unsplash.com/photo-1601924582971-d1010e4a5e3d' },
-  { id: 2, categoria: 'Salgados', nome: 'Coxinha', desc: 'Tradicional de frango com catupiry.', preco: 6.00, image: 'https://images.unsplash.com/photo-1601050690597-3b4c1780d46a' },
-  { id: 3, categoria: 'Bebidas', nome: 'Refrigerante Lata', desc: '350ml, diversos sabores.', preco: 6.00, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b' },
-  // adicione quantos quiser...
-];
+  <!-- Supabase (coloque sua URL e ANON KEY abaixo) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
-/* ===== ESTADO DO CARRINHO ===== */
-let carrinho = {}; // { produtoId: quantidade }
+  <style>
+    * { box-sizing: border-box; }
+    body,html { height:100%; margin:0; font-family: 'Poppins', sans-serif; }
+    /* Tela inicial com imagem de fundo */
+    #splash { background-image: url('https://img.freepik.com/vetores-gratis/fundo-de-padrao-de-pizza-desenhado-a-mao_23-2150905263.jpg?semt=ais_hybrid&w=740&q=80'); background-size:cover; background-position:center; height:100%; display:flex; align-items:center; justify-content:center; }
+    #enter-btn { background:#e63946;color:white;padding:20px 30px;border-radius:12px;border:none;font-size:1.2rem;cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.2);} 
 
-/* ===== RENDER DO CARDÁPIO ===== */
-function renderMenu() {
-  const grid = document.getElementById('menu-grid');
-  grid.innerHTML = '';
+    /* App container */
+    #app { display:none; height:100%; }
+    header { display:flex; align-items:center; gap:12px; padding:12px 16px; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    #logo { width:48px; height:48px; border-radius:8px; background:#fff; display:flex; align-items:center; justify-content:center; }
+    #brand { font-family: 'Colibri', Arial, sans-serif; font-size:1.1rem; font-weight:700; }
+    #subtitle { font-family: 'Arial Black', Arial, sans-serif; font-size:0.85rem; }
+    main { padding:16px; max-width:900px; margin:12px auto; }
 
-  // agrupar por categoria
-  const categorias = {};
-  produtos.forEach(p => {
-    if (!categorias[p.categoria]) categorias[p.categoria] = [];
-    categorias[p.categoria].push(p);
-  });
+    .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+    .btn { padding:12px; border-radius:10px; background:#457b9d;color:white;border:none; cursor:pointer; font-weight:600; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; }
+    .category-title { font-size:1.2rem; color:#1d3557; margin:8px 0; }
 
-  // para cada categoria, cria bloco
-  for (const [cat, itens] of Object.entries(categorias)) {
-    const catTitle = document.createElement('div');
-    catTitle.className = 'categoria-block';
-    catTitle.innerHTML = `<h3 style="margin-top:1rem;color:#1d3557;border-left:5px solid #e63946;padding-left:10px;">${cat}</h3>`;
-    grid.appendChild(catTitle);
+    .card { background:white; border-radius:12px; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .item-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #eee; }
+    .qty { width:72px; display:flex; gap:6px; align-items:center; }
+    .small { font-size:0.9rem; color:#555; }
+    .concluir-btn { display:none; position:fixed; top:16px; right:16px; background:#e63946;color:white;padding:10px 14px;border-radius:10px;border:none; z-index:999; }
 
-    const catGrid = document.createElement('div');
-    catGrid.className = 'grid';
-    catGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(180px, 1fr))';
-    catGrid.style.gap = '1rem';
+    /* login/cadastro modals simples */
+    .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
+    .card-modal { background:white; padding:18px; border-radius:10px; width:320px; }
+    input,select,textarea { width:100%; padding:8px; margin-top:8px; border-radius:6px; border:1px solid #ccc; }
 
-    itens.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <img src="${item.image}" alt="${item.nome}" onerror="this.src='https://via.placeholder.com/400x300?text=Sem+imagem'">
-        <div class="card-content">
-          <h3>${item.nome}</h3>
-          <p>${item.desc}</p>
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="price">R$ ${item.preco.toFixed(2)}</span>
-            <div>
-              <button onclick="adicionarAoCarrinho(${item.id})" style="margin-left:8px;padding:6px;border-radius:8px;background:#457b9d;color:#fff;border:none;cursor:pointer;">
-                <i class="fa-solid fa-cart-plus"></i> Adicionar
-              </button>
-            </div>
+    /* comanda */
+    #comanda-list { background:white; padding:12px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .obs { margin-top:8px; }
+
+    @media(max-width:600px){ header{padding:8px;} main{padding:10px;} 
+    /* Mobile adjustments */
+    .grid{ grid-template-columns: 1fr !important; }
+    .btn{ width:100% !important; padding:14px !important; }
+    .item-row{ flex-direction:column; align-items:flex-start; gap:8px; }
+    .qty{ width:auto; }
+    .card-modal{ width:90% !important; }
+    #concluir-top{ right:10px; top:10px; }
+  }
+  </style>
+</head>
+<body>
+
+  <!-- TELA INICIAL (splash) -->
+  <div id="splash">
+    <button id="enter-btn">Entrar no Delivery Express</button>
+  </div>
+
+  <!-- APP PRINCIPAL -->
+  <div id="app">
+    <header>
+      <div id="logo"><i class="fa-solid fa-pizza-slice" style="font-size:20px;color:#e63946"></i></div>
+      <div>
+        <div id="brand">Sabor Express</div>
+        <div id="subtitle">Restaurante e Pizzaria</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div id="greeting">Olá, visitante</div>
+        <button id="btn-logout" style="display:none;background:transparent;border:none;color:#e63946;cursor:pointer">Sair</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- LOGIN MODAL -->
+      <div id="login-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Login</h3>
+          <input id="login-name" placeholder="Nome" />
+          <input id="login-pass" type="password" placeholder="Senha" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" onclick="doLogin()">Entrar</button>
+            <button class="btn" style="background:#6c757d" onclick="openRegister()">Cadastrar</button>
+          </div>
+          <div style="margin-top:8px;text-align:right"><a href="#" onclick="forgotPassword()">Esqueci a senha</a></div>
+        </div>
+      </div>
+
+      <!-- REGISTER MODAL -->
+      <div id="register-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Cadastro</h3>
+          <input id="reg-name" placeholder="Nome" />
+          <input id="reg-whatsapp" placeholder="WhatsApp (ex: 5588999...)" />
+          <input id="reg-pass" type="password" placeholder="Senha" />
+          <input id="reg-address" placeholder="Endereço" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" onclick="doRegister()">Finalizar</button>
+            <button class="btn" style="background:#6c757d" onclick="closeModals()">Cancelar</button>
           </div>
         </div>
-      `;
-      catGrid.appendChild(card);
-    });
-
-    grid.appendChild(catGrid);
-  }
-}
-
-/* ===== FUNÇÕES DO CARRINHO ===== */
-function adicionarAoCarrinho(id) {
-  carrinho[id] = (carrinho[id] || 0) + 1;
-  atualizarCarrinho();
-}
-
-function removerDoCarrinho(id) {
-  delete carrinho[id];
-  atualizarCarrinho();
-}
-
-function mudarQuantidade(id, delta) {
-  if (!carrinho[id]) return;
-  carrinho[id] += delta;
-  if (carrinho[id] <= 0) delete carrinho[id];
-  atualizarCarrinho();
-}
-
-function atualizarCarrinho() {
-  const lista = document.getElementById('lista-carrinho');
-  lista.innerHTML = '';
-  let total = 0;
-
-  // transforma carrinho em array com dados completos
-  const linhas = Object.entries(carrinho).map(([idStr, qtd]) => {
-    const id = Number(idStr);
-    const produto = produtos.find(p => p.id === id);
-    const subtotal = produto.preco * qtd;
-    total += subtotal;
-
-    const li = document.createElement('li');
-    li.style.display = 'flex';
-    li.style.justifyContent = 'space-between';
-    li.style.alignItems = 'center';
-
-    li.innerHTML = `
-      <div style="flex:1">
-        <strong>${produto.nome}</strong><br>
-        <small>R$ ${produto.preco.toFixed(2)} x ${qtd} = R$ ${subtotal.toFixed(2)}</small>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button onclick="mudarQuantidade(${id}, -1)" style="padding:4px 6px;border-radius:6px;">-</button>
-        <button onclick="mudarQuantidade(${id}, 1)" style="padding:4px 6px;border-radius:6px;">+</button>
-        <button onclick="removerDoCarrinho(${id})" style="padding:4px 6px;border-radius:6px;color:#b91d2c;">Remover</button>
+
+      <!-- FORGOT CODE MODAL -->
+      <div id="forgot-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Recuperar Senha</h3>
+          <input id="forgot-whatsapp" placeholder="WhatsApp cadastrado" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" onclick="sendResetCode()">Enviar código via WhatsApp</button>
+            <button class="btn" style="background:#6c757d" onclick="closeModals()">Cancelar</button>
+          </div>
+        </div>
       </div>
-    `;
-    return li;
-  });
 
-  linhas.forEach(li => lista.appendChild(li));
-  document.getElementById('total').textContent = total.toFixed(2);
-}
+      <!-- CONFIRM CODE -->
+      <div id="confirm-code-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Confirme o código</h3>
+          <input id="confirm-code" placeholder="Código" />
+          <button class="btn" onclick="verifyResetCode()">Confirmar</button>
+        </div>
+      </div>
 
-/* ===== TOGGLERS E CONFIRMAR PEDIDO (WHATSAPP) ===== */
-function toggleEndereco() {
-  const tipo = document.getElementById('tipo-pedido').value;
-  document.getElementById('endereco-field').style.display = tipo === 'entrega' ? 'block' : 'none';
-}
+      <!-- NEW PASSWORD -->
+      <div id="new-pass-modal" class="modal" style="display:none">
+        <div class="card-modal">
+          <h3>Nova senha</h3>
+          <input id="new-pass" type="password" placeholder="Nova senha" />
+          <button class="btn" onclick="setNewPassword()">Salvar senha</button>
+        </div>
+      </div>
 
-function togglePagamento() {
-  const metodo = document.getElementById('pagamento').value;
-  document.getElementById('pix-info').style.display = metodo === 'pix' ? 'block' : 'none';
-  document.getElementById('dinheiro-info').style.display = metodo === 'dinheiro' ? 'block' : 'none';
-  if (metodo === 'pix') {
-    // atualiza imagem do QR e a chave exibida
-    document.querySelector('#pix-info strong').textContent = 'Chave PIX:';
-    document.querySelector('#pix-info p').innerHTML = `<strong>Chave PIX:</strong> ${chavePix}`;
-    document.querySelector('#pix-info img').src = gerarQrUrl(chavePix);
-  }
-}
 
-function confirmarPedido() {
-  if (Object.keys(carrinho).length === 0) {
-    alert('Adicione pelo menos um item ao pedido.');
-    return;
-  }
-  const tipo = document.getElementById('tipo-pedido').value;
-  const pagamento = document.getElementById('pagamento').value;
-  const endereco = tipo === 'entrega' ? document.getElementById('endereco').value || '-' : 'Retirada no local';
-  const troco = pagamento === 'dinheiro' ? document.getElementById('troco').value : '';
+      <!-- TELA PRINCIPAL APÓS LOGIN -->
+      <div id="home-screen" style="display:none">
+        <h2 id="welcome-title">Olá, qual seu pedido hoje?</h2>
+        <div class="grid" style="margin-top:12px">
+          <button class="btn" onclick="openCategory('pizzas')">PIZZAS</button>
+          <button class="btn" onclick="openCategory('salgados')">SALGADOS</button>
+          <button class="btn" onclick="openCategory('bebidas')">BEBIDAS</button>
+          <button class="btn" onclick="openCategory('variados')">VARIADOS</button>
+          <button class="btn" onclick="openComanda()">COMANDA</button>
+          <button class="btn" onclick="confirmarComandaManual()">CONFIRMAR</button>
+        </div>
+      </div>
 
-  let resumo = `*Novo Pedido*%0A`;
-  Object.entries(carrinho).forEach(([id, qtd]) => {
-    const p = produtos.find(x => x.id === Number(id));
-    resumo += `- ${p.nome} (x${qtd}): R$ ${(p.preco * qtd).toFixed(2)}%0A`;
-  });
-  resumo += `%0ATotal: R$ ${document.getElementById('total').textContent}`;
-  resumo += `%0ATipo: ${tipo.toUpperCase()}%0AEndereço: ${encodeURIComponent(endereco)}`;
-  resumo += `%0APagamento: ${pagamento.toUpperCase()}`;
-  if (troco) resumo += `%0ATroco: ${encodeURIComponent(troco)}`;
-  resumo += `%0A%0A⚠️ *Importante:* Envie o comprovante de pagamento via WhatsApp para confirmar o pedido.`;
+      <!-- CATEGORIA -->
+      <div id="category-screen" style="display:none">
+        <div class="topbar">
+          <h3 class="category-title" id="category-title">Pizzas</h3>
+          <button id="concluir-top" class="concluir-btn" onclick="concluirSelecionados()">Concluir</button>
+        </div>
+        <div id="category-list"></div>
+      </div>
 
-  const url = `https://wa.me/${numeroWhatsApp}?text=${resumo}`;
-  window.open(url, '_blank');
-}
+      <!-- COMANDA -->
+      <div id="comanda-screen" style="display:none">
+        <h3>Comanda</h3>
+        <div id="comanda-list"></div>
+        <div style="margin-top:8px">Observações:</div>
+        <textarea id="obs-text" class="obs" placeholder="Ex: Sem cebola"></textarea>
+        <div style="margin-top:8px">
+          <button class="btn" onclick="iniciarPagamento()">PAGAR</button>
+        </div>
+      </div>
 
-/* ===== INICIALIZAÇÃO ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  renderMenu();
-  atualizarCarrinho();
+      <!-- PAGAMENTO -->
+      <div id="pagamento-screen" style="display:none">
+        <h3>Pagamento</h3>
+        <div>
+          <label><input type="radio" name="entrega" value="entrega"> Entrega (+R$2,00)</label>
+          <label><input type="radio" name="entrega" value="retirar" checked> Retirar</label>
+        </div>
+        <div id="endereco-custom" style="display:none;margin-top:8px">
+          <input id="endereco-custom-input" placeholder="Insira o endereço" />
+        </div>
 
-  // configura primeira renderização do PIX info
-  document.getElementById('pix-info').innerHTML = `
-    <p><strong>Chave PIX:</strong> ${chavePix}</p>
-    <p>Envie o comprovante do pagamento via WhatsApp para confirmar o pedido.</p>
-    <img src="${gerarQrUrl(chavePix)}" alt="QR Code PIX">
-  `;
-});
-</script>
+        <div style="margin-top:12px">
+          <button class="btn" onclick="selecionarPagamento('pix')">PIX</button>
+          <button class="btn" onclick="selecionarPagamento('dinheiro')">DINHEIRO</button>
+          <button class="btn" onclick="selecionarPagamento('cartao')">CARTAO</button>
+        </div>
+
+        <div id="pix-box" style="display:none;margin-top:12px;background:#f1faee;padding:10px;border-radius:8px">
+          <div>Conclua o pagamento</div>
+          <div id="pix-key">Chave PIX: 88996488990</div>
+          <div>VALOR: R$ <span id="pix-valor">0.00</span></div>
+          <div style="margin-top:8px"><button class="btn" onclick="copiarPix()">Copiar Chave</button></div>
+        </div>
+
+        <div id="dinheiro-box" style="display:none;margin-top:12px">
+          <div>Precisa de troco?</div>
+          <input id="troco-valor" placeholder="Ex: Troco para R$ 50" />
+        </div>
+
+        <div style="margin-top:12px">
+          <button id="finalizar-btn" class="btn" style="background:#e63946" disabled onclick="finalizarPedido()">FINALIZAR</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    /***** CONFIGURAÇÃO SUPABASE e WHATSAPP *****/
+    const SUPABASE_URL = 'https://bugvqljxmtnunosimaaj.supabase.co' // coloque aqui sua supabase url (ex: https://xyz.supabase.co)
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1Z3ZxbGp4bXRudW5vc2ltYWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MDc3NDEsImV4cCI6MjA3NzE4Mzc0MX0.9ziEmLU7QsTtVXyZKiYMxQuudAIHgrZI9njbZB84dqM' // coloque aqui sua anon public key
+    const numeroWhatsAppLoja = '5588996488990' // número da loja
+    const PIX_KEY = '88996488990'
+
+    // inicializa supabase se configurado (compatível com o bundle CDN do Supabase v2)
+    let supabase = null
+    // o script CDN expõe o namespace em window.supabase ou window.supabaseJs; aqui detectamos automaticamente
+    const _supabaseLib = window.supabase || window.supabaseJs || window.supabaseClient || null
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && _supabaseLib && typeof _supabaseLib.createClient === 'function') {
+      supabase = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    } else {
+      // se o client não puder ser inicializado, supabase permanece null e o app usa localStorage como fallback
+      supabase = null
+    }
+
+    /***** ESTADO LOCAL (cliente) *****/
+    let currentUser = null // {name, whatsapp, address}
+    let tempResetCode = null
+
+    // carrinho temporário antes de salvar como pedido
+    let tempSelection = [] // itens selecionados na categoria atual antes de concluir
+    let comanda = [] // itens no carrinho principal
+
+    // menu fixo conforme pedido
+    const MENU = {
+      pizzas: [
+        {id:'p1', name:'CALABRESA', desc:'calabresa, queijo, mussarela, milho, ervilha', price:38.00},
+        {id:'p2', name:'04 QUEIJOS', desc:'queijo qualho, katupiry, mussarela, milho, ervilha', price:30.00}
+      ],
+      salgados: [
+        {id:'s1', name:'CALABRESA', desc:'calabresa, milho, ervilha', price:38.00},
+        {id:'s2', name:'04 QUEIJOS', desc:'queijo qualho, katupiry, mussarela, milho, ervilha', price:30.00}
+      ],
+      bebidas: [
+        {id:'b1', name:'COCA 2L', desc:'Coca Cola 2L', price:10.00},
+        {id:'b2', name:'DELRIO 2L', desc:'Delrio 2L', price:10.00}
+      ],
+      variados: [
+        {id:'v1', name:'SOPA DE SOJA', desc:'soja, soja', price:10.00},
+        {id:'v2', name:'CANJA', desc:'canja, canja', price:10.00}
+      ]
+    }
+
+    /***** UTILIDADES *****/
+    function $(id){return document.getElementById(id)}
+    function show(el){ el.style.display = 'block' }
+    function hide(el){ el.style.display = 'none' }
+
+    // Contador de pedidos diários (localStorage) -- se supabase disponível, salva lá também
+    function nextOrderNumber(){
+      const hoje = new Date().toISOString().slice(0,10)
+      const key = 'ordernum_'+hoje
+      let n = Number(localStorage.getItem(key) || 0) + 1
+      localStorage.setItem(key, n)
+      return String(n).padStart(2,'0')
+    }
+
+    /***** INICIALIZAÇÃO UI */
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // splash enter
+      $('enter-btn').addEventListener('click', ()=>{
+        $('splash').style.display='none'
+        $('app').style.display='block'
+        openLoginIfNeeded()
+      })
+
+      // login flow buttons
+      $('btn-logout').addEventListener('click', ()=>{ logout() })
+
+      // radio entrega
+      document.querySelectorAll('input[name="entrega"]').forEach(r=> r.addEventListener('change', ()=>{
+        const v = document.querySelector('input[name="entrega"]:checked').value
+        $('endereco-custom').style.display = v==='entrega' ? 'block':'none'
+      }))
+    })
+
+    /***** AUTH SIMPLES (usa supabase se configurado, senão localStorage) */
+    function openLoginIfNeeded(){
+      // se já logado (localStorage), vai direto
+      const stored = localStorage.getItem('de_user')
+      if(stored){ currentUser = JSON.parse(stored); openHome(); return }
+      // senão abre modal de login
+      show($('login-modal'))
+    }
+    function closeModals(){ hide($('login-modal')); hide($('register-modal')); hide($('forgot-modal')); hide($('confirm-code-modal')); hide($('new-pass-modal')) }
+    function openRegister(){ hide($('login-modal')); show($('register-modal')) }
+
+    async function doRegister(){
+      const name = $('reg-name').value.trim(); const whatsapp = $('reg-whatsapp').value.trim(); const pass = $('reg-pass').value; const address = $('reg-address').value.trim()
+      if(!name || !whatsapp || !pass){ alert('Preencha nome, whatsapp e senha'); return }
+      // se supabase configurado, insira tabela 'customers' com columns: name, whatsapp, password, address
+      if(supabase){
+        const { data, error } = await supabase.from('customers').insert([{ name, whatsapp, password:pass, address }])
+        if(error){ console.error(error); alert('Erro ao cadastrar: '+error.message); return }
+      } else {
+        // salva localmente (não seguro) - apenas para demo
+        const users = JSON.parse(localStorage.getItem('de_users')||'[]')
+        if(users.find(u=>u.whatsapp===whatsapp)){ alert('WhatsApp já cadastrado'); return }
+        users.push({ name, whatsapp, password:pass, address })
+        localStorage.setItem('de_users', JSON.stringify(users))
+      }
+      closeModals()
+      // envia mensagem de cadastro realizado via WhatsApp
+      const text = encodeURIComponent(`Cadastro realizado com sucesso! Olá ${name}.`)
+      window.open(`https://wa.me/${whatsapp}?text=${text}`)
+      alert('Cadastro realizado. Abra o WhatsApp para confirmar.')
+    }
+
+    async function doLogin(){
+      const name = $('login-name').value.trim(); const pass = $('login-pass').value;
+      if(!name||!pass){ alert('Preencha nome e senha'); return }
+      if(supabase){
+        try{
+          // procura usuário por nome
+          const { data, error } = await supabase.from('customers').select().eq('name', name).limit(1).maybeSingle()
+          if(error){ console.error(error); alert('Erro no login'); return }
+          const user = data
+          if(!user){ alert('Cliente não Cadastrado'); return }
+          if(user.password !== pass){ alert('Nome ou senha inválidos'); return }
+          currentUser = { name:user.name, whatsapp:user.whatsapp, address:user.address }
+          localStorage.setItem('de_user', JSON.stringify(currentUser))
+          closeModals(); openHome()
+        }catch(e){ console.error(e); alert('Erro no login') }
+      } else {
+        const users = JSON.parse(localStorage.getItem('de_users')||'[]')
+        const user = users.find(u=>u.name===name && u.password===pass)
+        if(!user){ alert('Cliente não Cadastrado'); return }
+        currentUser = { name:user.name, whatsapp:user.whatsapp, address:user.address }
+        localStorage.setItem('de_user', JSON.stringify(currentUser))
+        closeModals(); openHome()
+      }
+    }
+
+    function logout(){ localStorage.removeItem('de_user'); currentUser=null; location.reload() }
+
+    /***** ESQUECI A SENHA via WhatsApp (gera e envia código) */
+    function forgotPassword(){ hide($('login-modal')); show($('forgot-modal')) }
+    function sendResetCode(){ const w = $('forgot-whatsapp').value.trim(); if(!w){ alert('Digite o WhatsApp'); return }
+      tempResetCode = Math.floor(1000+Math.random()*9000).toString()
+      const text = encodeURIComponent(`Seu código de recuperação: ${tempResetCode}`)
+      window.open(`https://wa.me/${w}?text=${text}`)
+      closeModals(); show($('confirm-code-modal'))
+    }
+    function verifyResetCode(){ const c = $('confirm-code').value.trim(); if(c===tempResetCode){ closeModals(); show($('new-pass-modal')) } else alert('Código inválido') }
+    function setNewPassword(){ const np = $('new-pass').value; if(!np){ alert('Digite nova senha'); return }
+      // atualiza no supabase ou localStorage (assume whatsapp usado no reset flow)
+      // aqui simplificado: procura usuário pelo whatsapp informado no passo anterior
+      const w = $('forgot-whatsapp').value.trim()
+      if(supabase){ supabase.from('customers').update({ password: np }).eq('whatsapp', w).then(()=>{ alert('Senha alterada'); closeModals(); show($('login-modal')) }) }
+      else{ const users = JSON.parse(localStorage.getItem('de_users')||'[]'); const u = users.find(x=>x.whatsapp===w); if(u){ u.password=np; localStorage.setItem('de_users', JSON.stringify(users)); alert('Senha alterada'); closeModals(); show($('login-modal')) } else{ alert('Usuário não encontrado') } }
+    }
+
+    /***** HOME / CATEGORIAS / SELEÇÃO DE ITENS */
+    function openHome(){ hide($('login-modal')); hide($('register-modal')); hide($('forgot-modal'))
+      $('home-screen').style.display='block'
+      $('greeting').textContent = currentUser ? `${currentUser.name.split(' ')[0]}` : 'Visitante'
+      $('welcome-title').textContent = `Olá ${currentUser?currentUser.name.split(' ')[0]:'amigo'}, qual seu pedido hoje?`
+      $('btn-logout').style.display = 'inline-block'
+    }
+
+    function openCategory(cat){ $('home-screen').style.display='none'; $('category-screen').style.display='block'; $('category-list').innerHTML=''; $('category-title').textContent = cat.toUpperCase()
+      tempSelection = []
+      const arr = MENU[cat]
+      arr.forEach(it=>{
+        const div = document.createElement('div'); div.className='card'
+        div.innerHTML = `<div class="item-row">
+          <div>
+            <strong>${it.name}</strong><div class="small">${it.desc}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end">
+            <div class="small">R$ ${it.price.toFixed(2)}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
+              <div class="qty">
+                <button onclick="changeTempQty('${it.id}', -1)">-</button>
+                <span id="q_${it.id}">0</span>
+                <button onclick="changeTempQty('${it.id}', 1)">+</button>
+              </div>
+              <button class="btn" onclick="addTempItem('${cat}','${it.id}')">Adicionar</button>
+            </div>
+          </div>
+        </div>`
+        $('category-list').appendChild(div)
+      })
+    }
+
+    function changeTempQty(id, delta){ const el = $('q_'+id); const val = Number(el.textContent||0)+delta; el.textContent = Math.max(0,val); if(val<=0) removeTempItemQty(id) }
+    function addTempItem(cat,id){ const menu = MENU[cat]; const it = menu.find(x=>x.id===id); const qty = Number($('q_'+id).textContent||0); if(qty<=0){ alert('Escolha quantidade'); return }
+      // adiciona qty vezes no tempSelection (poderíamos simplificar e adicionar obj com qty)
+      tempSelection.push({ ...it, qty })
+      $('concluir-top').style.display='inline-block'
+      alert(`${qty} x ${it.name} adicionado(s)`) ;
+    }
+    function removeTempItemQty(id){ tempSelection = tempSelection.filter(x=>x.id!==id) }
+    function concluirSelecionados(){ // adiciona tempSelection na comanda
+      tempSelection.forEach(it=>{ comanda.push(it) })
+      tempSelection = []
+      $('concluir-top').style.display='none'
+      $('category-screen').style.display='none'
+      $('home-screen').style.display='block'
+      renderComanda()
+    }
+
+    /***** COMANDA */
+    function openComanda(){ $('home-screen').style.display='none'; $('comanda-screen').style.display='block'; renderComanda() }
+    function renderComanda(){ const el = $('comanda-list'); el.innerHTML=''; let total=0; comanda.forEach((it,idx)=>{
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='8px 0'
+      const name = document.createElement('div'); name.innerHTML = `${it.qty} x <strong>${it.name}</strong><div class="small">R$ ${(it.price*it.qty).toFixed(2)}</div>`
+      const actions = document.createElement('div'); actions.innerHTML = `<button onclick="removerDaComanda(${idx})" style="background:transparent;border:none;color:#b91d2c">Remover</button>`
+      row.appendChild(name); row.appendChild(actions); el.appendChild(row); total += it.price*it.qty
+    })
+      const totalDiv = document.createElement('div'); totalDiv.style.textAlign='right'; totalDiv.style.fontWeight='700'; totalDiv.style.marginTop='8px'; totalDiv.textContent = `Total: R$ ${total.toFixed(2)}`
+      el.appendChild(totalDiv)
+    }
+    function removerDaComanda(i){ comanda.splice(i,1); renderComanda() }
+
+    /***** PAGAMENTO FLOW */
+    function iniciarPagamento(){ $('comanda-screen').style.display='none'; $('pagamento-screen').style.display='block'; const total = comanda.reduce((s,it)=>s+it.price*it.qty,0); $('pix-valor').textContent = total.toFixed(2) }
+    function selecionarPagamento(metodo){ $('finalizar-btn').disabled = false; hide($('pix-box')); hide($('dinheiro-box'));
+      if(metodo==='pix'){ show($('pix-box')); $('pix-key').textContent = 'Chave PIX:'+PIX_KEY }
+      if(metodo==='dinheiro'){ show($('dinheiro-box')) }
+      // cartão nada especial
+      // guarda método escolhido
+      window._metodoEscolhido = metodo
+    }
+
+    function copiarPix(){ navigator.clipboard.writeText(PIX_KEY); alert('Chave PIX copiada'); // volta pra home
+      $('pagamento-screen').style.display='none'; $('home-screen').style.display='block' }
+
+    function confirmarComandaManual(){ // atalho para confirmar sem abrir comanda
+      openComanda(); iniciarPagamento(); }
+
+    async function finalizarPedido(){
+      // calcula total e adiciona taxa de entrega se aplicável
+      let total = comanda.reduce((s,it)=>s+it.price*it.qty,0)
+      const entrega = document.querySelector('input[name="entrega"]:checked').value
+      let endereco = currentUser ? currentUser.address : ''
+      if(entrega==='entrega'){
+        total += 2.00
+        const addrCustom = $('endereco-custom-input').value.trim()
+        if(addrCustom) endereco = addrCustom
+      }
+      const obs = $('obs-text').value
+      const pagamento = window._metodoEscolhido || 'PIX'
+      let troco = ''
+      if(pagamento==='dinheiro') troco = $('troco-valor').value || ''
+
+      const numero = nextOrderNumber()
+      // Monta mensagem
+      let msg = `Pedido Nº ${numero} - ${entrega.toUpperCase()}%0A`
+      comanda.forEach(it=>{ msg += `${it.qty} ${it.name}%0A` })
+      if(obs) msg += `obs: ${obs}%0A`
+      msg += `TOTAL R$ ${total.toFixed(2)}%0A`
+      if(pagamento==='pix') msg += `Pagamento: PIX - SEGUE O COMPROVANTE%0AChave PIX:${PIX_KEY}%0AVALOR R$ ${total.toFixed(2)}%0A`;
+      if(pagamento==='dinheiro') msg += `Pagamento: DINHEIRO - Troco p/ ${troco || '-'}%0A`;
+      if(pagamento==='cartao') msg += `Pagamento: CARTAO%0A`;
+
+      // Salva no supabase (opcional)
+      const orderObj = { order_number: numero, customer_name: currentUser?currentUser.name:'', whatsapp: currentUser?currentUser.whatsapp:'', items: JSON.stringify(comanda), total: total, payment: pagamento, delivery: entrega, address: endereco, obs }
+      if(supabase){
+        await supabase.from('orders').insert([orderObj])
+      } else {
+        // salva local
+        const orders = JSON.parse(localStorage.getItem('de_orders')||'[]')
+        orders.push(orderObj); localStorage.setItem('de_orders', JSON.stringify(orders))
+      }
+
+      // envia WhatsApp para a loja
+      const url = `https://wa.me/${numeroWhatsAppLoja}?text=${msg}`
+      window.open(url, '_blank')
+
+      // limpa comanda (pedido some da comanda após finalizar)
+      comanda = []
+      $('comanda-list').innerHTML = ''
+      $('obs-text').value = ''
+      $('pagamento-screen').style.display='none'
+      $('home-screen').style.display='block'
+      alert('Pedido enviado. Obrigado!')
+    }
+
+    /***** UTILIDADES ADICIONAIS */
+    function removerDoArrayById(arr,id){ const i = arr.findIndex(x=>x.id===id); if(i>=0) arr.splice(i,1) }
+
+  </script>
+
+  <!--
+  SQL PARA CRIAR AS TABELAS NO SUPABASE
+  COLE ESTE BLOCO NO SQL EDITOR DO SEU PROJETO SUPABASE (SQL > QUERY)
+
+  -- Habilita extensão para UUID
+  CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+  -- Tabela de clientes
+  CREATE TABLE IF NOT EXISTS public.customers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL,
+    whatsapp text UNIQUE NOT NULL,
+    password text NOT NULL,
+    address text,
+    created_at timestamptz DEFAULT now()
+  );
+
+  -- Tabela de pedidos
+  CREATE TABLE IF NOT EXISTS public.orders (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number text NOT NULL,
+    customer_id uuid REFERENCES public.customers(id),
+    customer_name text,
+    whatsapp text,
+    items jsonb NOT NULL,
+    total numeric(10,2) NOT NULL,
+    payment text,
+    delivery text,
+    address text,
+    obs text,
+    created_at timestamptz DEFAULT now()
+  );
+
+  -- Índices úteis
+  CREATE INDEX IF NOT EXISTS idx_orders_order_number ON public.orders(order_number);
+  CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders(created_at);
+
+  -- Observação sobre RLS (Row Level Security):
+  -- Neste exemplo deixamos RLS desabilitado por simplicidade. Em produção recomendamos
+  -- habilitar RLS e criar políticas adequadas (por exemplo: permitir INSERT para o papel 'anon'
+  -- apenas se você entender as implicações de segurança, ou usar uma Edge Function/back-end
+  -- para criar pedidos com a service_role).
+
+  -->
+
+</body>
+</html>
