@@ -1,352 +1,189 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Delivery Express 🍕</title>
+<!-- substitua as seções estáticas de Pizzas/Salgados/Bebidas pela div onde o menu será renderizado -->
+<section class="categoria" id="menu">
+  <h2><i class="fa-solid fa-utensils"></i> Cardápio</h2>
+  <div id="menu-grid" class="grid"></div>
+</section>
 
-  <!-- Fonte e ícones -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" 
-        integrity="sha512-XxQf5f+YjzQx5E6T0PqZT5xLzU+ib+Rp4HIlV0OljBSb2YcCUq/Nm7V4lznn8PlXwKZfa7Pp+oeYb5V0wV0aVQ==" 
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
+<!-- mantenha o carrinho/opções/pagamento como estão, só vamos trocar o script -->
+<script>
+/* ===== CONFIGURAÇÃO ===== */
+const numeroWhatsApp = '5588996488990'; // seu número com DDI+DDD
+let chavePix = 'seuemail@exemplo.com'; // chave PIX — altere aqui
+// Gera URL do QR (api.qrserver.com). Pode trocar pelo gerador que preferir.
+function gerarQrUrl(chave) {
+  const payload = `PIX:${chave}`; // texto simples; se quiser o payload do PIX COP (código EMV) gere payload específico
+  return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(payload)}&size=200x200`;
+}
 
-  <style>
-    * { box-sizing: border-box; }
+/* ===== CARDÁPIO =====
+  Adicione/edite itens aqui. image: URL da imagem (pode ser local ou CDN)
+  categoria deve ser: 'Pizzas', 'Salgados', 'Bebidas', etc.
+*/
+const produtos = [
+  { id: 1, categoria: 'Pizzas', nome: 'Pizza Calabresa', desc: 'Queijo, calabresa, cebola e orégano.', preco: 35.00, image: 'https://images.unsplash.com/photo-1601924582971-d1010e4a5e3d' },
+  { id: 2, categoria: 'Salgados', nome: 'Coxinha', desc: 'Tradicional de frango com catupiry.', preco: 6.00, image: 'https://images.unsplash.com/photo-1601050690597-3b4c1780d46a' },
+  { id: 3, categoria: 'Bebidas', nome: 'Refrigerante Lata', desc: '350ml, diversos sabores.', preco: 6.00, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b' },
+  // adicione quantos quiser...
+];
 
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background-color: #f8f8f8;
-      color: #333;
-    }
+/* ===== ESTADO DO CARRINHO ===== */
+let carrinho = {}; // { produtoId: quantidade }
 
-    header {
-      position: sticky;
-      top: 0;
-      background-color: #e63946;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      z-index: 10;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
+/* ===== RENDER DO CARDÁPIO ===== */
+function renderMenu() {
+  const grid = document.getElementById('menu-grid');
+  grid.innerHTML = '';
 
-    main {
-      padding: 1rem;
-      max-width: 900px;
-      margin: auto;
-    }
+  // agrupar por categoria
+  const categorias = {};
+  produtos.forEach(p => {
+    if (!categorias[p.categoria]) categorias[p.categoria] = [];
+    categorias[p.categoria].push(p);
+  });
 
-    .categoria h2 {
-      margin-top: 2rem;
-      color: #1d3557;
-      border-left: 5px solid #e63946;
-      padding-left: 10px;
-      font-size: 1.3rem;
-    }
+  // para cada categoria, cria bloco
+  for (const [cat, itens] of Object.entries(categorias)) {
+    const catTitle = document.createElement('div');
+    catTitle.className = 'categoria-block';
+    catTitle.innerHTML = `<h3 style="margin-top:1rem;color:#1d3557;border-left:5px solid #e63946;padding-left:10px;">${cat}</h3>`;
+    grid.appendChild(catTitle);
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-    }
+    const catGrid = document.createElement('div');
+    catGrid.className = 'grid';
+    catGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(180px, 1fr))';
+    catGrid.style.gap = '1rem';
 
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.2s;
-    }
-
-    .card:hover { transform: scale(1.02); }
-
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-    }
-
-    .card-content {
-      padding: 0.8rem;
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-    }
-
-    .card-content h3 {
-      margin: 0;
-      font-size: 1rem;
-    }
-
-    .card-content p {
-      font-size: 0.9rem;
-      color: #555;
-      flex-grow: 1;
-    }
-
-    .card-content .price {
-      font-weight: bold;
-      color: #e63946;
-    }
-
-    .card-content button {
-      margin-top: 0.5rem;
-      background-color: #457b9d;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 0.5rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.3s;
-    }
-
-    .card-content button:hover { background-color: #1d3557; }
-
-    .carrinho, .opcoes {
-      background: white;
-      border-radius: 12px;
-      padding: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-top: 2rem;
-    }
-
-    .carrinho h2, .opcoes h2 {
-      color: #1d3557;
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    #lista-carrinho li {
-      border-bottom: 1px solid #eee;
-      padding: 0.3rem 0;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .total {
-      text-align: right;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    label, select, input {
-      display: block;
-      width: 100%;
-      margin-top: 10px;
-      font-size: 1rem;
-    }
-
-    select, input[type="text"] {
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    #pix-info, #dinheiro-info {
-      display: none;
-      margin-top: 10px;
-      background: #f1faee;
-      padding: 10px;
-      border-radius: 8px;
-    }
-
-    #pix-info img {
-      width: 120px;
-      display: block;
-      margin-top: 10px;
-    }
-
-    .confirmar {
-      width: 100%;
-      background: #e63946;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 1rem;
-      font-size: 1.2rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 1rem;
-      transition: background 0.3s;
-    }
-
-    .confirmar:hover { background: #b91d2c; }
-
-    @media (max-width: 600px) {
-      header { font-size: 1.2rem; }
-      .card-content h3 { font-size: 0.95rem; }
-      .card-content p { font-size: 0.85rem; }
-    }
-  </style>
-</head>
-
-<body>
-  <header><i class="fa-solid fa-pizza-slice"></i> Delivery Express</header>
-
-  <main>
-    <!-- PIZZAS -->
-    <section class="categoria" id="pizzas">
-      <h2><i class="fa-solid fa-pizza-slice"></i> Pizzas</h2>
-      <div class="grid">
-        <div class="card">
-          <img src="https://images.unsplash.com/photo-1601924582971-d1010e4a5e3d" alt="Pizza Calabresa">
-          <div class="card-content">
-            <h3>Pizza Calabresa</h3>
-            <p>Queijo, calabresa, cebola e orégano.</p>
-            <span class="price">R$ 35,00</span>
-            <button onclick="addItem('Pizza Calabresa', 35)"><i class="fa-solid fa-cart-plus"></i> Adicionar</button>
+    itens.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${item.image}" alt="${item.nome}" onerror="this.src='https://via.placeholder.com/400x300?text=Sem+imagem'">
+        <div class="card-content">
+          <h3>${item.nome}</h3>
+          <p>${item.desc}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="price">R$ ${item.preco.toFixed(2)}</span>
+            <div>
+              <button onclick="adicionarAoCarrinho(${item.id})" style="margin-left:8px;padding:6px;border-radius:8px;background:#457b9d;color:#fff;border:none;cursor:pointer;">
+                <i class="fa-solid fa-cart-plus"></i> Adicionar
+              </button>
+            </div>
           </div>
         </div>
+      `;
+      catGrid.appendChild(card);
+    });
+
+    grid.appendChild(catGrid);
+  }
+}
+
+/* ===== FUNÇÕES DO CARRINHO ===== */
+function adicionarAoCarrinho(id) {
+  carrinho[id] = (carrinho[id] || 0) + 1;
+  atualizarCarrinho();
+}
+
+function removerDoCarrinho(id) {
+  delete carrinho[id];
+  atualizarCarrinho();
+}
+
+function mudarQuantidade(id, delta) {
+  if (!carrinho[id]) return;
+  carrinho[id] += delta;
+  if (carrinho[id] <= 0) delete carrinho[id];
+  atualizarCarrinho();
+}
+
+function atualizarCarrinho() {
+  const lista = document.getElementById('lista-carrinho');
+  lista.innerHTML = '';
+  let total = 0;
+
+  // transforma carrinho em array com dados completos
+  const linhas = Object.entries(carrinho).map(([idStr, qtd]) => {
+    const id = Number(idStr);
+    const produto = produtos.find(p => p.id === id);
+    const subtotal = produto.preco * qtd;
+    total += subtotal;
+
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.justifyContent = 'space-between';
+    li.style.alignItems = 'center';
+
+    li.innerHTML = `
+      <div style="flex:1">
+        <strong>${produto.nome}</strong><br>
+        <small>R$ ${produto.preco.toFixed(2)} x ${qtd} = R$ ${subtotal.toFixed(2)}</small>
       </div>
-    </section>
-
-    <!-- SALGADOS -->
-    <section class="categoria" id="salgados">
-      <h2><i class="fa-solid fa-burger"></i> Salgados</h2>
-      <div class="grid">
-        <div class="card">
-          <img src="https://images.unsplash.com/photo-1601050690597-3b4c1780d46a" alt="Coxinha">
-          <div class="card-content">
-            <h3>Coxinha</h3>
-            <p>Tradicional de frango com catupiry.</p>
-            <span class="price">R$ 6,00</span>
-            <button onclick="addItem('Coxinha', 6)"><i class="fa-solid fa-cart-plus"></i> Adicionar</button>
-          </div>
-        </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="mudarQuantidade(${id}, -1)" style="padding:4px 6px;border-radius:6px;">-</button>
+        <button onclick="mudarQuantidade(${id}, 1)" style="padding:4px 6px;border-radius:6px;">+</button>
+        <button onclick="removerDoCarrinho(${id})" style="padding:4px 6px;border-radius:6px;color:#b91d2c;">Remover</button>
       </div>
-    </section>
+    `;
+    return li;
+  });
 
-    <!-- BEBIDAS -->
-    <section class="categoria" id="bebidas">
-      <h2><i class="fa-solid fa-bottle-water"></i> Bebidas</h2>
-      <div class="grid">
-        <div class="card">
-          <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b" alt="Refrigerante Lata">
-          <div class="card-content">
-            <h3>Refrigerante Lata</h3>
-            <p>350ml, diversos sabores.</p>
-            <span class="price">R$ 6,00</span>
-            <button onclick="addItem('Refrigerante Lata', 6)"><i class="fa-solid fa-cart-plus"></i> Adicionar</button>
-          </div>
-        </div>
-      </div>
-    </section>
+  linhas.forEach(li => lista.appendChild(li));
+  document.getElementById('total').textContent = total.toFixed(2);
+}
 
-    <!-- CARRINHO -->
-    <section class="carrinho">
-      <h2><i class="fa-solid fa-cart-shopping"></i> Seu Pedido</h2>
-      <ul id="lista-carrinho"></ul>
-      <div class="total">Total: R$ <span id="total">0,00</span></div>
-    </section>
+/* ===== TOGGLERS E CONFIRMAR PEDIDO (WHATSAPP) ===== */
+function toggleEndereco() {
+  const tipo = document.getElementById('tipo-pedido').value;
+  document.getElementById('endereco-field').style.display = tipo === 'entrega' ? 'block' : 'none';
+}
 
-    <!-- ENTREGA -->
-    <section class="opcoes">
-      <h2><i class="fa-solid fa-truck"></i> Tipo de Pedido</h2>
-      <label for="tipo-pedido">Selecione:</label>
-      <select id="tipo-pedido" onchange="toggleEndereco()">
-        <option value="retirada">Retirada</option>
-        <option value="entrega">Entrega</option>
-      </select>
-      <div id="endereco-field" style="display:none;">
-        <label for="endereco">Endereço para entrega:</label>
-        <input type="text" id="endereco" placeholder="Rua, número, bairro" />
-      </div>
-    </section>
+function togglePagamento() {
+  const metodo = document.getElementById('pagamento').value;
+  document.getElementById('pix-info').style.display = metodo === 'pix' ? 'block' : 'none';
+  document.getElementById('dinheiro-info').style.display = metodo === 'dinheiro' ? 'block' : 'none';
+  if (metodo === 'pix') {
+    // atualiza imagem do QR e a chave exibida
+    document.querySelector('#pix-info strong').textContent = 'Chave PIX:';
+    document.querySelector('#pix-info p').innerHTML = `<strong>Chave PIX:</strong> ${chavePix}`;
+    document.querySelector('#pix-info img').src = gerarQrUrl(chavePix);
+  }
+}
 
-    <!-- PAGAMENTO -->
-    <section class="opcoes">
-      <h2><i class="fa-solid fa-credit-card"></i> Forma de Pagamento</h2>
-      <label for="pagamento">Selecione:</label>
-      <select id="pagamento" onchange="togglePagamento()">
-        <option value="pix">PIX</option>
-        <option value="dinheiro">Dinheiro</option>
-        <option value="cartao">Cartão</option>
-      </select>
+function confirmarPedido() {
+  if (Object.keys(carrinho).length === 0) {
+    alert('Adicione pelo menos um item ao pedido.');
+    return;
+  }
+  const tipo = document.getElementById('tipo-pedido').value;
+  const pagamento = document.getElementById('pagamento').value;
+  const endereco = tipo === 'entrega' ? document.getElementById('endereco').value || '-' : 'Retirada no local';
+  const troco = pagamento === 'dinheiro' ? document.getElementById('troco').value : '';
 
-      <div id="pix-info">
-        <p><strong>Chave PIX:</strong> seuemail@exemplo.com</p>
-        <p>Envie o comprovante do pagamento via WhatsApp para confirmar o pedido.</p>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?data=suaChavePixAqui&type=png" alt="QR Code PIX">
-      </div>
+  let resumo = `*Novo Pedido*%0A`;
+  Object.entries(carrinho).forEach(([id, qtd]) => {
+    const p = produtos.find(x => x.id === Number(id));
+    resumo += `- ${p.nome} (x${qtd}): R$ ${(p.preco * qtd).toFixed(2)}%0A`;
+  });
+  resumo += `%0ATotal: R$ ${document.getElementById('total').textContent}`;
+  resumo += `%0ATipo: ${tipo.toUpperCase()}%0AEndereço: ${encodeURIComponent(endereco)}`;
+  resumo += `%0APagamento: ${pagamento.toUpperCase()}`;
+  if (troco) resumo += `%0ATroco: ${encodeURIComponent(troco)}`;
+  resumo += `%0A%0A⚠️ *Importante:* Envie o comprovante de pagamento via WhatsApp para confirmar o pedido.`;
 
-      <div id="dinheiro-info">
-        <label for="troco">Precisa de troco?</label>
-        <input type="text" id="troco" placeholder="Ex: Troco para R$ 50" />
-      </div>
-    </section>
+  const url = `https://wa.me/${numeroWhatsApp}?text=${resumo}`;
+  window.open(url, '_blank');
+}
 
-    <!-- CONFIRMAR -->
-    <button class="confirmar" onclick="confirmarPedido()">
-      <i class="fa-brands fa-whatsapp"></i> Enviar Pedido no WhatsApp
-    </button>
-  </main>
+/* ===== INICIALIZAÇÃO ===== */
+document.addEventListener('DOMContentLoaded', () => {
+  renderMenu();
+  atualizarCarrinho();
 
-  <script>
-    let carrinho = [];
-
-    function addItem(nome, preco) {
-      carrinho.push({ nome, preco });
-      atualizarCarrinho();
-    }
-
-    function atualizarCarrinho() {
-      const lista = document.getElementById('lista-carrinho');
-      lista.innerHTML = '';
-      let total = 0;
-      carrinho.forEach(item => {
-        total += item.preco;
-        const li = document.createElement('li');
-        li.textContent = `${item.nome} - R$ ${item.preco.toFixed(2)}`;
-        lista.appendChild(li);
-      });
-      document.getElementById('total').textContent = total.toFixed(2);
-    }
-
-    function toggleEndereco() {
-      const tipo = document.getElementById('tipo-pedido').value;
-      document.getElementById('endereco-field').style.display = tipo === 'entrega' ? 'block' : 'none';
-    }
-
-    function togglePagamento() {
-      const metodo = document.getElementById('pagamento').value;
-      document.getElementById('pix-info').style.display = metodo === 'pix' ? 'block' : 'none';
-      document.getElementById('dinheiro-info').style.display = metodo === 'dinheiro' ? 'block' : 'none';
-    }
-
-    function confirmarPedido() {
-      if (carrinho.length === 0) {
-        alert('Adicione pelo menos um item ao pedido.');
-        return;
-      }
-
-      const tipo = document.getElementById('tipo-pedido').value;
-      const pagamento = document.getElementById('pagamento').value;
-      const endereco = tipo === 'entrega' ? document.getElementById('endereco').value : 'Retirada no local';
-      const troco = pagamento === 'dinheiro' ? document.getElementById('troco').value : '';
-
-      let resumo = `*Novo Pedido*%0A`;
-      carrinho.forEach(item => {
-        resumo += `- ${item.nome}: R$ ${item.preco.toFixed(2)}%0A`;
-      });
-      resumo += `%0ATotal: R$ ${document.getElementById('total').textContent}`;
-      resumo += `%0ATipo: ${tipo.toUpperCase()}%0AEndereço: ${endereco}`;
-      resumo += `%0APagamento: ${pagamento.toUpperCase()}`;
-      if (troco) resumo += `%0ATroco: ${troco}`;
-
-      resumo += `%0A%0A⚠️ *Importante:* Envie o comprovante de pagamento via WhatsApp para confirmar o pedido.`;
-
-      const numeroWhatsApp = '5588996488990'; // Coloque seu número com DDI + DDD
-      const url = `https://wa.me/${numeroWhatsApp}?text=${resumo}`;
-      window.open(url, '_blank');
-    }
-  </script>
-</body>
-</html>
+  // configura primeira renderização do PIX info
+  document.getElementById('pix-info').innerHTML = `
+    <p><strong>Chave PIX:</strong> ${chavePix}</p>
+    <p>Envie o comprovante do pagamento via WhatsApp para confirmar o pedido.</p>
+    <img src="${gerarQrUrl(chavePix)}" alt="QR Code PIX">
+  `;
+});
+</script>
