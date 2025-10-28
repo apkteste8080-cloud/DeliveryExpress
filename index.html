@@ -9,13 +9,14 @@
        STYLES (internos, mobile-first)
        ============================ -->
   <style>
-    :root{
+   :root{
       --accent:#e63946;
       --lime:#bfff00;
       --card-bg: rgba(255,255,255,0.92);
       --text:#020302;
       --shadow: 14px 24px rgba(#ffffff);
     }
+
     /* base */
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;-webkit-font-smoothing:antialiased}
@@ -24,7 +25,7 @@
     button{font-family:inherit;cursor:pointer}
 
     * top banner area (clear, no watermark overlay) */
-    header{display:flex;align-items:center;gap:3px;padding:12px;background:transparent}
+    header{display:flex;align-items:center;gap:3px;padding:16px;background:transparent}
     #top-banner{width:100%;max-width:600px;border-radius:24px;display:block;object-fit:contain;box-shadow:var(--shadow)}
     .brand-block{display:flex;flex-direction:column;gap:3px}
     #brand{font-family:"Arial Black","Arial",sans-serif;font-weight:900;font-size:36px;color:#020302;text-shadow:3px 10px rgba(#ffffff)}
@@ -35,16 +36,16 @@
 
     /* Home buttons in column, equal size */
     .home-card{background:transparent;padding-top:6px}
-    .home-buttons{display:flex;flex-direction:column;gap:8px;max-width:600px}
+    .home-buttons{display:flex;flex-direction:column;gap:4px;max-width:1000px}
     .main-btn{
       width:100%;
       padding:16px;
-      border-radius:14px;
+      border-radius:12px;
       border:none;
       background:var(--card-bg);
-      font-weight:900;
-      font-size:18px;
-      color:#020302;
+      font-weight:1000;
+      font-size:20px;
+      color:#000000;
       box-shadow:var(--shadow);
       text-align:center;
     }
@@ -55,14 +56,14 @@
 
     /* category header */
     .cat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
-    .voltar{background:transparent;border:none;color:#020302;font-weight:800;font-size:16px}
+    .voltar{background:transparent;border:none;color:#000000;font-weight:1000;font-size:16px}
 
     /* list items */
     .card-list{display:flex;flex-direction:column;gap:10px}
     .card-item{background:var(--card-bg);padding:12px;border-radius:10px;display:flex;justify-content:space-between;gap:8px;box-shadow:var(--shadow)}
     .item-left{max-width:62%}
-    .item-name{font-weight:900}
-    .item-ingredients{font-size:13px;color:#333;margin-top:8px;max-height:120px;overflow:auto;padding-right:6px;white-space:pre-wrap}
+    .item-name{font-weight:1000}
+    .item-ingredients{font-size:18px;color:#000000;margin-top:8px;max-height:120px;overflow:auto;padding-right:12px;white-space:pre-wrap}
 
     .item-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
     .price{font-weight:900}
@@ -135,7 +136,7 @@
     <!-- CATEGORY -->
     <section id="category-screen" class="screen">
       <div class="cat-header">
-        <button class="voltar" onclick="openHome()">← Voltar</button>
+        <button class="VOLTAR" onclick="openHome()">VOLTAR</button>
         <h2 id="category-title">Categoria</h2>
         <div></div>
       </div>
@@ -150,7 +151,7 @@
     <!-- COMANDA -->
     <section id="comanda-screen" class="screen">
       <div class="cat-header">
-        <button class="voltar" onclick="openHome()">← Voltar</button>
+        <button class="VOLTAR" onclick="openHome()">VOLTAR</button>
         <h2>Comanda</h2>
         <div></div>
       </div>
@@ -171,18 +172,19 @@
     <!-- PAGAMENTO -->
     <section id="pagamento-screen" class="screen">
       <div class="cat-header">
-        <button class="voltar" onclick="openHome()">← Voltar</button>
+        <button class="VOLTAR" onclick="openHome()">VOLTAR</button>
         <h2>Pagamento</h2>
         <div></div>
       </div>
 
       <div class="pay-card">
         <div>
-          <label><input type="radio" name="entrega" value="entrega"> Entrega (+R$2,00)</label>
-          <label style="margin-left:12px"><input type="radio" name="entrega" value="retirar" checked> Retirar</label>
+         <label><input type="radio" name="entrega" value="entrega"> Entrega (+R$2,00)</label>
+          <label style="margin-left:30px"><input type="radio" name="entrega" value="retirar" checked> Retirar</label>
+
         </div>
 
-        <div id="entrega-fields" style="display:none;margin-top:10px">
+        <div id="entrega-fields" style="display:none;margin-top:24px">
           <input id="cliente-nome" placeholder="Nome do cliente (obrigatório para entrega)" />
           <input id="cliente-endereco" placeholder="Endereço (rua, número, complemento)" />
         </div>
@@ -193,11 +195,11 @@
           <button class="pay-btn" onclick="selecionarPagamento('cartao')">CARTÃO</button>
         </div>
 
-        <div id="pix-box" class="pay-box" style="display:none">
+       <div id="pix-box" class="pay-box" style="display:none">
         <div>Chave PIX: <strong id="pix-key">pix_fake_2025@exemplo.com</strong></div>
           <div>VALOR: R$ <span id="pix-valor">0.00</span></div>
-          <div style="margin-top:8px;display:flex;gap:8px">
-            <button id="copiar-pix" class="pay-btn">Copiar Chave & Finalizar</button>
+          <div style="margin-top:10px;display:flex;gap:12px">
+            <button id="copiar-pix" class="pay-btn">Copiar PIX & Finalizar</button>
             
           </div>
         </div>
@@ -207,7 +209,7 @@
           <input id="troco-valor" placeholder="Ex: Troco para R$ 50" />
         </div>
 
-        <div style="margin-top:12px">
+        <div style="margin-top:6px">
           <button id="finalizar-btn" class="pay-btn" disabled onclick="finalizarPedido()">FINALIZAR</button>
         </div>
       </div>
@@ -235,19 +237,41 @@
       pizzas: [
         { id:'p1', name:'CALABRESA', ingredients: 'Mussarela, calabresa, cebola', price:{P:20, M:25, G:30} },
         { id:'p2', name:'FRANGO CATUPIRY', ingredients: 'Frango desfiado, catupiry, milho', price:{P:22, M:28, G:34} },
-        { id:'p3', name:'4 QUEIJOS', ingredients: 'Mussarela, provolone, parmesão, gorgonzola', price:{P:24, M:30, G:36} }
+        { id:'p3', name:'4 QUEIJOS', ingredients: 'Mussarela, provolone, parmesão, gorgonzola', price:{P:24, M:30, G:36} },
+        { id:'p4', name: 'BAIANA', ingredients:'Muçarela, calabresa, tomate, cebola e orégano', price:{P:36, M:44, G:50} },
+       { id:'p5', name: 'CALABRESA PICANTE', ingredients:'Muçarela, calabresa, pimenta calabresa e orégano', price:{P:36, M:44, G:50} },
+       { id:'p6', name: 'NAPOLITANA', ingredients:'Muçarela, presunto, azeitona, cebola, tomate e orégano', price:{P:36, M:44, G:50} },
+      { id:'p7', name: 'MUSSARELA', ingredients:'Muçarela, tomate e orégano', price:{P:36, M:44, G:50} },
+      { id:'p8', name: 'MARGUERITA', ingredients:'Muçarela, cebola, tomate e manjericão', price:{P:36, M:44, G:50} },
+      { id:'p9', name: 'PORTUGUESA', ingredients:'Muçarela, presunto, calabresa, cebola, pimentão, milho, azeitona, tomate, ovo e orégano', price:      {P:36, M:44, G:50} },
+      { id:'p10', name: 'PESUNTO', ingredients:'Muçarela, presunto e orégano', price:{P:36, M:44, G:50} },
       ],
       salgados: [
-        { id:'s1', name:'Coxinha', ingredients:'Recheio tradicional', price:{D:6} },
-        { id:'s2', name:'Esfiha', ingredients:'Esfiha aberta', price:{D:5.5} }
+       { id:'s1', name:'COXINHA', ingredients:'Recheio tradicional', price:{D:6} },
+       { id:'s2', name:'EFIRRA', ingredients:'Esfiha aberta', price:{D:5.5} },
+       { id:'s3', name:'RISSOLES DE CARNE', ingredients:'Recheio tradicional', price:{D:5.5} },
+      { id:'s4', name:'PASTEL DE FORNO', ingredients:'SABORES:queijo, frango, misto, carne, (informar sabor nas observações)', price:{D:7.0} },
+      { id:'s5', name:'EMPANADA DE FRANGO', ingredients:'Recheio Tradicional', price:{D:5.0} },
+      { id:'s6', name:'EMPANADA DE FRANGO C/ CATUPIRY', ingredients:'Frango, catupiry', price:{D:7.0} },
+      { id:'s7', name:'KALZONE', ingredients:'Recheio Tradicional', price:{D:7.0} },
       ],
       bebidas: [
-        { id:'b1', name:'Coca 2L', ingredients:'Refrigerante', price:{D:10} },
-        { id:'b2', name:'Água 500ml', ingredients:'Água mineral', price:{D:4} }
+        { id:'b1', name:'COCA SL 1L', ingredients:'Refrigerante', price:{D:10} },
+        { id:'b2', name:'COCA COLA LATA', ingredients:'refrigerante', price:{D:4} },
+        { id:'b3', name:'COCA COLA 1L', ingredients:'refrigerante', price:{D:10} },
+       { id:'b4', name:'COCA COLA 2L', ingredients:'refrigerante', price:{D:15} },
+      { id:'b5', name:'SÃO GERALDO 2L', ingredients:'refrigerante', price:{D:10} },
+      { id:'b6', name:'DELRIO 2L', ingredients:'refrigerante', price:{D:10} },
+     { id:'b7', name:'ÁGUA S/ GÁS 500ml', ingredients:'água mineral', price:{D:3} },
+     { id:'b7', name:'ÁGUA C/ GÁS 500ml', ingredients:'água gaseficada', price:{D:3} },
       ],
       variados: [
-        { id:'v1', name:'Canja', ingredients:'Canja caseira', price:{D:12} },
-        { id:'v2', name:'Sopa do dia', ingredients:'Consulte', price:{D:15} }
+        { id:'v1', name:'CANJA', ingredients:'Canja caseira', price:{D:12} },
+        { id:'v2', name:'SOPA DO DIA', ingredients:'Consulte', price:{D:15} },
+       { id:'v3', name:'STROGONOF DE FRANGO', ingredients:'frango, milho, ervilha, arroz e Batata Palha', price:{D:8} },
+      { id:'v4', name:'STROGONOF DE CARNE', ingredients:'carne, milho, arroz e Batata Palha', price:{D:8} },
+      { id:'v5', name:'CREME DE FRANGO', ingredients:'frango, milho, arroz e batata palha', price:{D:10.0} },
+      { id:'v5', name:'VATAPÁ DE FRANGO', ingredients:'frango, milho, arroz e batata palha', price:{D:12.0} },
       ]
     };
 
@@ -289,7 +313,7 @@
       // preparar valores
       const total = totalComanda();
       $('pix-valor').textContent = total.toFixed(2);
-      $('pix-key').textContent = PIX_KEY;
+     $('pix-key').textContent = PIX_KEY;
       hide($('pix-box'));
       hide($('dinheiro-box'));
       $('finalizar-btn').disabled = true;
@@ -329,7 +353,7 @@
         const price = document.createElement('div'); price.className = 'price';
         if(cat === 'pizzas'){
           const minP = Math.min(item.price.P, item.price.M, item.price.G);
-          price.textContent = `desde R$ ${minP.toFixed(2)}`;
+          price.textContent = ` R$ ${minP.toFixed(2)}`;
         } else {
           price.textContent = `R$ ${(item.price.D).toFixed(2)}`;
         }
@@ -448,9 +472,9 @@
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
               <div>
-                <button class="voltar" onclick="decreaseQty(${idx})">-</button>
-                <button class="voltar" onclick="increaseQty(${idx})">+</button>
-                <button class="voltar" onclick="removeFromComanda(${idx})" style="color:#b91d2c">Remover</button>
+                <button class="VOLTAR" onclick="decreaseQty(${idx})">-</button>
+                <button class="VOLTAR" onclick="increaseQty(${idx})">+</button>
+                <button class="VOLTAR" onclick="removeFromComanda(${idx})" style="color:#b91d2c">Remover</button>
               </div>
               <div class="small">cat: ${it.category}</div>
             </div>
@@ -480,7 +504,7 @@
       if(metodo === 'pix'){ show($('pix-box')); hide($('dinheiro-box')); $('finalizar-btn').disabled = true; }
       if(metodo === 'dinheiro'){ show($('dinheiro-box')); hide($('pix-box')); $('finalizar-btn').disabled = false; }
       if(metodo === 'cartao'){ hide($('pix-box')); hide($('dinheiro-box')); $('finalizar-btn').disabled = false; }
-    }
+   }
 
     function copiarPixAndFinalize(){
       navigator.clipboard.writeText(PIX_KEY).catch(()=>{});
